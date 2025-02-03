@@ -95,13 +95,13 @@ cast rpc keystore_getStateAt <keystoreAddress> "latest' --rpc-url $KEYSTORE_RPC_
 
 If you immediately try sending another bundle with the `sendBundle.ts` script, you might notice that it still uses the counterfactual keystore account. This means that the new update has not propagated to Base Sepolia yet. Base Sepolia reads L1 blocks at a delay of approximately one epoch, meaning you must wait ~7 minutes for the update to propagate.
 
-Since this is the first update for the `keystoreAddress`, we can verify the update was successful by checking that `userOp`s are no longer using a counterfactual keystore account.
+Since this is the first update for the `keystoreAddress`, you can verify the update was propagated by checking that `userOp`s are no longer using a counterfactual keystore account.
 
 ```bash
 bun run src/bundle/sendBundle.ts
 ```
 
-If the update was successful, you should see something like:
+If it was in fact propagated, you should see something like:
 
 ```bash
 Using initialized keystore account
