@@ -174,4 +174,4 @@ dist
 # Finder (MacOS) folder config
 .DS_Store
 
-_setup.toml
+_account.toml

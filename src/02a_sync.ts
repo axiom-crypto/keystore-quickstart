@@ -6,7 +6,7 @@ import {
   publicClientSepolia,
 } from "./_setup";
 import { abi as L1BlockAbi } from "../abis/L1Block.json";
-import { encodeAbiParameters, toHex, toRlp } from "viem";
+import { toHex, toRlp } from "viem";
 
 (async () => {
   const cacheTxHash = await keystoreValidatorModule.write.cacheBlockhash();

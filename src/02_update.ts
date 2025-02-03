@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import { parse } from "@iarna/toml";
 import {
   dataHash,
-  ecdsaConsumerCodehash,
+  consumerCodehash,
   encodeDataHashData,
   nodeProvider,
   privKey1,
@@ -21,16 +21,17 @@ import {
   KeystoreAccountBuilder,
   TransactionStatus,
   UpdateTransactionBuilder,
+  type AccountState,
   type SponsorAuthInputs,
   type UpdateTransactionRequest,
 } from "@axiom-crypto/keystore-sdk";
-import { hexToBigInt } from "viem";
+import { decodeAbiParameters, hexToBigInt, keccak256 } from "viem";
 
-const RETRY_INTERVAL_SEC = 20;
-const MAX_RETRIES = 10;
+const RETRY_INTERVAL_SEC = 30;
+const MAX_RETRIES = 20;
 
 (async () => {
-  const tomlContent = readFileSync("src/_setup.toml", "utf-8");
+  const tomlContent = readFileSync("src/_account.toml", "utf-8");
   const config = parse(tomlContent);
 
   const keystoreAddress = config.keystoreAddress as `0x${string}`;
@@ -38,21 +39,42 @@ const MAX_RETRIES = 10;
     await nodeProvider.getTransactionCount(keystoreAddress, BlockTag.Latest)
   );
 
+  // Initialize the keystore account based on whether the account is counterfactual or not.
   let keystoreAccount;
+  let eoaAddrs: `0x${string}`[];
   if (nonce === 0n) {
     keystoreAccount = KeystoreAccountBuilder.initCounterfactual(
       config.salt as `0x${string}`,
       dataHash,
       vkey
     );
+    eoaAddrs = signers;
   } else {
+    const state: AccountState = await nodeProvider.getStateAt(
+      keystoreAddress,
+      BlockTag.Latest
+    );
+
+    const [, , addrs] = decodeAbiParameters(
+      [
+        { name: "codehash", type: "uint256" },
+        { name: "threshold", type: "uint256" },
+        { name: "eoaAddrs", type: "address[]" },
+      ],
+      ("0x" + state.data.slice(4)) as `0x${string}`
+    );
+
+    // @ts-expect-error
+    eoaAddrs = addrs;
+
     keystoreAccount = KeystoreAccountBuilder.initWithKeystoreAddress(
       keystoreAddress,
-      dataHash,
+      state.dataHash,
       vkey
     );
   }
 
+  // Fetch how much the sequencer is charging for `feePerGas`
   const feePerGas = await sequencerProvider.gasPrice();
 
   const newUserData = constructNewUserData();
@@ -71,9 +93,9 @@ const MAX_RETRIES = 10;
   const sponsorAuthInputs: SponsorAuthInputs = {
     sponsorAuth: AXIOM_ACCOUNT_AUTH_INPUTS,
     userAuth: {
-      codeHash: ecdsaConsumerCodehash,
+      codeHash: consumerCodehash,
       signatures: [userSig],
-      eoaAddrs: signers,
+      eoaAddrs,
     },
   };
 
@@ -130,7 +152,7 @@ const MAX_RETRIES = 10;
       const receipt = await nodeProvider.getTransactionReceipt(txHash);
       if (receipt.status !== currentStatus) {
         currentStatus = receipt.status;
-        console.log("Transaction receipt:", receipt);
+        console.log("Transaction status:", currentStatus);
       }
       if (currentStatus === TransactionStatus.L2FinalizedL1Included) {
         console.log("Success: transaction finalized!");
@@ -157,5 +179,5 @@ function constructNewUserData() {
 
   const newSignersList = [...signers, newAuthorizedAddress];
 
-  return encodeDataHashData(ecdsaConsumerCodehash, threshold, newSignersList);
+  return encodeDataHashData(consumerCodehash, threshold, newSignersList);
 }

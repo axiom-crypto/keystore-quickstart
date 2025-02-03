@@ -49,7 +49,7 @@ import { sendBundle } from "./bundle/sendBundle.ts";
     salt,
     keystoreAddress,
   };
-  writeFileSync("src/_setup.toml", stringify(tomlData));
+  writeFileSync("src/_account.toml", stringify(tomlData));
 
   console.log();
   await sendBundle();

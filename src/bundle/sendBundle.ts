@@ -22,6 +22,8 @@ if (import.meta.main) {
 }
 
 // Nexus-specific
+// For demonstration purposes, we don't really care about the execution. So we
+// just send some calldata to a random target
 function constructCalldata() {
   const executeSig = "0xe9ae5c53";
   const executeMode =
@@ -48,7 +50,7 @@ function constructCalldata() {
 }
 
 export async function sendBundle() {
-  const tomlContent = readFileSync("src/_setup.toml", "utf-8");
+  const tomlContent = readFileSync("src/_account.toml", "utf-8");
   const config = parse(tomlContent);
   const { packedUserOp, userOpHash } = await constructUserOp(
     config.nexusDeployment as `0x${string}`,
@@ -111,6 +113,7 @@ async function constructUserOp(
   return { packedUserOp, userOpHash };
 }
 
+// Constructs the keystore-specific userOp signature.
 async function constructKeystoreUserOpSignature(
   authData: `0x${string}`,
   salt: `0x${string}`,
@@ -154,7 +157,7 @@ async function constructKeystoreUserOpSignature(
   } else {
     keyData = imtProof.state.data;
 
-    console.log("Using existing keystore account");
+    console.log("Using initialized keystore account");
   }
 
   const signature = encodeAbiParameters(
