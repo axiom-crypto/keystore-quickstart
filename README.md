@@ -1,8 +1,7 @@
 # Keystore Quickstart
 
-## Table of Contents
+This repository houses a series of scripts to help you explore and understand the Keystore as quickly as possible. 
 
-```plaintext
 - [Overview](#overview)
 - [Running the Scripts](#running-the-scripts)
   - [Setup and `01_setup.ts`](#setup-and-01_setupts)
@@ -10,11 +9,10 @@
   - [`02_update.ts`](#02_updatets)
     - [Re-Orgs](#re-orgs)
   - [`02a_sync.ts`](#02a_syncts)
-```
 
 ## Overview
 
-This repository contains a series of scripts to help you explore and understand the Keystore as quickly as possible. The scripts are meant to be run in a specific order with Base Sepolia acting as the consuming rollup and Sepolia as the L1 hosting the Keystore rollup bridge. Throughout the demos, we use Biconomy’s [Nexus](https://github.com/bcnmy/nexus), an ERC-7579–compatible smart account, as the transacting smart account and the authentication rule being enforced is an m-of-n vkey created by Axiom.
+The scripts are meant to be run in a specific order with Base Sepolia acting as the consuming rollup and Sepolia as the L1 hosting the Keystore rollup bridge. Throughout the demos, we use Biconomy’s [Nexus](https://github.com/bcnmy/nexus), an ERC-7579–compatible smart account, as the transacting smart account and the authentication rule being enforced is an m-of-n vkey created by Axiom.
 
 Additionally, rather than depend on an external bundler, the scripts self-bundle the `userOp`s and require you to provide a funded Base Sepolia private key. The scripts are as follows:
 
