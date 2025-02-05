@@ -33,6 +33,8 @@ Configure the environment variables in the `.env` file.
 cp .env.example .env
 ```
 
+The `BUNDLING_PRIVATE_KEY` env var must be funded on base sepolia.
+
 Fill out the `src/_setup.toml` file with the desired parameters. Functional defaults are provided.
 
 Install dependencies
