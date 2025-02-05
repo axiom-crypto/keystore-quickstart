@@ -33,7 +33,13 @@ Configure the environment variables in the `.env` file.
 cp .env.example .env
 ```
 
-Fill out the `_setup.toml` file with the desired parameters. Functional defaults are provided.
+Fill out the `src/_setup.toml` file with the desired parameters. Functional defaults are provided.
+
+Install dependencies
+
+```bash
+bun install
+```
 
 Then, you can run the setup script with
 
@@ -45,9 +51,9 @@ This script will:
 
 - Deploy a Nexus instance.
 - Counterfactually initialize a keystore account.
-  - To read more about counterfactual initialization, see the [Account Initialization docs](https://keystore-docs.vercel.app/docs/using-keystore-accounts/counterfactual).
+  - To read more about counterfactual initialization, see the [Account Initialization docs](https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/counterfactual).
 - Install the Keystore Validator as a module.
-  - To read more about the Keystore Validator, see the [Keystore Validator docs](https://keystore-docs.vercel.app/docs/using-keystore-accounts/overview#integrating-smart-accounts-with-the-keystore-validator).
+  - To read more about the Keystore Validator, see the [Keystore Validator docs](https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/overview#integrating-smart-accounts-with-the-keystore-validator).
 - Send the first `userOp` using the Keystore Validator.
 
 In addition, it will output an `_account.toml` file which contains the necessary smart account / keystore account metadata to transact on L2s and the keystore. Below is an example `_account.toml` file:
@@ -70,7 +76,7 @@ Run the script with
 bun run src/bundle/sendBundle.ts
 ```
 
-This script will build the `userOp` to be executed which will include constructing the IMT proof of the state at the `keystoreAddress` relevant to the smart account. To read more about the IMT proof construction, see the [Transaction on L2s docs](https://keystore-docs.vercel.app/docs/using-keystore-accounts/transaction#modifying-the-useroperation-signature).
+This script will build the `userOp` to be executed which will include constructing the IMT proof of the state at the `keystoreAddress` relevant to the smart account. To read more about the IMT proof construction, see the [Transaction on L2s docs](https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/transaction#modifying-the-useroperation-signature).
 
 It will then send the `userOp` to the `EntryPoint` for execution. The console output will look something like:
 
@@ -88,7 +94,7 @@ This script will run through the entire process of making an update on the keyst
 
 - Construct an `UpdateTransaction` that the user signs
 - Send the `UpdateTransaction` to the signature prover which will generate the proof of the user's signature, generate the proof of sponsor authentication, and return a complete, serialized `UpdateTransaction` ready for submission to the sequencer
-  - To read more about the signature prover, see the [Signature Prover docs](https://keystore-docs.vercel.app/docs/creating-a-keystore-account-type/signature-prover).
+  - To read more about the signature prover, see the [Signature Prover docs](https://keystore-docs.axiom.xyz/docs/creating-a-keystore-account-type/signature-prover).
   - On testnet, sponsorship is completely free meaning that anyone can authenticate.
   - This step may take a couple minutes to complete.
 - Send the transaction to the sequencer and await finalization.
