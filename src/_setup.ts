@@ -4,12 +4,12 @@ import {
   getContract,
   http,
   keccak256,
-  encodeAbiParameters,
-  encodePacked,
+  concat,
 } from "viem";
 import { baseSepolia, sepolia } from "viem/chains";
 import { privateKeyToAccount, privateKeyToAddress } from "viem/accounts";
 import {
+  encodeMOfNData,
   KeystoreNodeProvider,
   KeystoreSequencerProvider,
   KeystoreSignatureProverProvider,
@@ -25,10 +25,6 @@ const setup = parse(readFileSync("src/_setup.toml", "utf-8"));
 // ERC-4337 constants
 //@ts-expect-error
 export const invalidationTime = BigInt(setup.invalidationTime);
-
-// Nexus-specific constants
-export const k1Validator = "0x00000004171351c442B202678c48D8AB5B321E8f";
-export const nonceKey = "0x00000000DC5C2fF9B93b7897D886daCDBBF56F6671708e74";
 
 const privKeyFunded = (process.env.BUNDLING_PRIVATE_KEY ??
   (() => {
@@ -61,12 +57,29 @@ const keystoreSignatureProverRpc =
   (() => {
     throw new Error("KEYSTORE_SIGNATURE_PROVER_RPC_URL is undefined");
   })();
+const keystoreValidatorAddress =
+  process.env.KEYSTORE_VALIDATOR_L2_ADDRESS ??
+  (() => {
+    throw new Error("KEYSTORE_VALIDATOR_L2_ADDRESS is undefined");
+  })();
+const keystoreBridgeAddress =
+  process.env.KEYSTORE_BRIDGE_ADDRESS ??
+  (() => {
+    throw new Error("KEYSTORE_BRIDGE_ADDRESS is undefined");
+  })();
 
 export const signer = privateKeyToAccount(privKeyFunded);
 export const account1 = privateKeyToAccount(privKey1);
 
+// Nexus-specific constants
+export const k1Validator = "0x00000004171351c442B202678c48D8AB5B321E8f";
+export const nonceKey = concat([
+  "0x00000000",
+  keystoreValidatorAddress as `0x${string}`,
+]) as `0x${string}`;
+
 export const keystoreBridge: `0x${string}` =
-  "0x9142BfBbA6eA6471C9eb9C39b3492F48B9a51EbF";
+  keystoreBridgeAddress as `0x${string}`;
 export const latestStateRootSlot: `0x${string}` =
   "0xc94330da5d5688c06df0ade6bfd773c87249c0b9f38b25021e2c16ab9672d000";
 
@@ -108,7 +121,7 @@ export const entryPoint = getContract({
 });
 
 export const keystoreValidatorModule = getContract({
-  address: "0xDC5C2fF9B93b7897D886daCDBBF56F6671708e74",
+  address: keystoreValidatorAddress as `0x${string}`,
   abi: KeystoreValidatorModuleAbi,
   client: { public: publicClientBaseSepolia, wallet: walletClientBaseSepolia },
 });
@@ -121,26 +134,7 @@ export const threshold = BigInt(setup.threshold);
 export const signers = setup.signerPrivKeys.map((privKey: `0x${string}`) =>
   privateKeyToAddress(privKey)
 );
-export const data = encodeDataHashData(consumerCodehash, threshold, signers);
+export const data = encodeMOfNData(consumerCodehash, threshold, signers);
 export const vkey = setup.vkey as `0x${string}`;
 export const dataHash = keccak256(data);
 export const vkeyHash = keccak256(vkey);
-
-export function encodeDataHashData(
-  codeHash: `0x${string}`,
-  m: bigint,
-  signersList: `0x${string}`[]
-): `0x${string}` {
-  const encoded = encodeAbiParameters(
-    [
-      { name: "codeHash", type: "bytes32" },
-      { name: "m", type: "uint256" },
-      { name: "signerList", type: "address[]" },
-    ],
-    [codeHash, m, signersList]
-  );
-
-  const packedEncoded = encodePacked(["bytes1", "bytes"], ["0x00", encoded]);
-
-  return packedEncoded;
-}

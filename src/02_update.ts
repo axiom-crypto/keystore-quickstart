@@ -3,7 +3,6 @@ import { parse } from "@iarna/toml";
 import {
   dataHash,
   consumerCodehash,
-  encodeDataHashData,
   nodeProvider,
   privKey1,
   sequencerProvider,
@@ -17,7 +16,7 @@ import {
   AXIOM_ACCOUNT,
   AXIOM_ACCOUNT_AUTH_INPUTS,
   BlockTag,
-  ecdsaSign,
+  encodeMOfNData,
   KeystoreAccountBuilder,
   TransactionStatus,
   UpdateTransactionBuilder,
@@ -25,7 +24,7 @@ import {
   type SponsorAuthInputs,
   type UpdateTransactionRequest,
 } from "@axiom-crypto/keystore-sdk";
-import { decodeAbiParameters, hexToBigInt, keccak256 } from "viem";
+import { decodeAbiParameters } from "viem";
 
 const RETRY_INTERVAL_SEC = 30;
 const MAX_RETRIES = 20;
@@ -80,7 +79,7 @@ const MAX_RETRIES = 20;
   const newUserData = constructNewUserData();
   const txReq: UpdateTransactionRequest = {
     nonce: nonce,
-    feePerGas: hexToBigInt(feePerGas),
+    feePerGas,
     newUserData,
     newUserVkey: vkey, // We won't alter the vkey
     userAcct: keystoreAccount,
@@ -88,7 +87,7 @@ const MAX_RETRIES = 20;
   };
   console.log("Transaction request:", txReq);
   const updateTx = UpdateTransactionBuilder.fromTransactionRequest(txReq);
-  const userSig = await ecdsaSign(privKey1, updateTx.userMsgHash());
+  const userSig = await updateTx.sign(privKey1);
 
   const sponsorAuthInputs: SponsorAuthInputs = {
     sponsorAuth: AXIOM_ACCOUNT_AUTH_INPUTS,
@@ -179,5 +178,5 @@ function constructNewUserData() {
 
   const newSignersList = [...signers, newAuthorizedAddress];
 
-  return encodeDataHashData(consumerCodehash, threshold, newSignersList);
+  return encodeMOfNData(consumerCodehash, threshold, newSignersList);
 }
