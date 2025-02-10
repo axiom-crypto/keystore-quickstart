@@ -89,7 +89,9 @@ const MAX_RETRIES = 20;
     userAcct: keystoreAccount,
     sponsorAcct: AXIOM_ACCOUNT,
   };
-  console.log("Transaction request:", txReq);
+  console.log("\n===== TRANSACTION REQUEST (DEBUG INFO) =====\n");
+  console.log(txReq);
+  console.log("\n========================================\n");
   const updateTx = UpdateTransactionBuilder.fromTransactionRequest(txReq);
   const userSig = await updateTx.sign(privKey1);
 
