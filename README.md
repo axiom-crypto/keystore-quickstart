@@ -4,7 +4,8 @@ This repository houses a series of scripts to help you explore and understand th
 
 - [Overview](#overview)
 - [Running the Scripts](#running-the-scripts)
-  - [Setup and `01_setup.ts`](#setup-and-01_setupts)
+  - [Setup](#setup)
+  - [`01_setup.ts`](01_setupts)
   - [`bundle/sendBundle.ts`](#bundlesendbundlets)
   - [`02_update.ts`](#02_updatets)
     - [Re-Orgs](#re-orgs)
