@@ -12,6 +12,7 @@ import {
 } from "../_setup";
 import { readFileSync } from "fs";
 import { parse } from "@iarna/toml";
+import { bold } from "../utils";
 
 // Conditionally execute `sendBundle` if the script is run directly
 if (import.meta.main) {
@@ -22,8 +23,7 @@ if (import.meta.main) {
 }
 
 // Nexus-specific
-// For demonstration purposes, we don't really care about the execution. So we
-// just send some calldata to a random target
+// For demonstration purposes, we will send 1 wei to a random target
 function constructCalldata() {
   const executeSig = "0xe9ae5c53";
   const executeMode =
@@ -32,30 +32,35 @@ function constructCalldata() {
   // Some random target
   const target = "0x171902257ef62B882BCA7ddBd48C179eB0A50Bc5";
   const value =
-    "0x0000000000000000000000000000000000000000000000000000000000000000";
-  const calldata = "0x0000";
+    "0x0000000000000000000000000000000000000000000000000000000000000001";
+  const calldata = "0x";
   const executionCalldata = concat([target, value, calldata]);
 
   const executionCalldataOffset =
     "0x0000000000000000000000000000000000000000000000000000000000000040";
   const executionCalldataLength =
-    "0x0000000000000000000000000000000000000000000000000000000000000036";
-  const executionCallDataBuffer = concat([
+    "0x0000000000000000000000000000000000000000000000000000000000000034";
+  const executionCalldataBuffer = concat([
     executionCalldataOffset,
     executionCalldataLength,
     executionCalldata,
   ]);
 
-  return concat([executeSig, executeMode, executionCallDataBuffer]);
+  return concat([executeSig, executeMode, executionCalldataBuffer]);
 }
 
 export async function sendBundle() {
-  const tomlContent = readFileSync("src/_account.toml", "utf-8");
-  const config = parse(tomlContent);
+  const l2TomlContent = readFileSync("src/_accountL2.toml", "utf-8");
+  const keystoreTomlContent = readFileSync(
+    "src/_accountKeystore.toml",
+    "utf-8"
+  );
+  const l2Config = parse(l2TomlContent);
+  const keystoreConfig = parse(keystoreTomlContent);
   const { packedUserOp, userOpHash } = await constructUserOp(
-    config.nexusDeployment as `0x${string}`,
-    config.salt as `0x${string}`,
-    config.keystoreAddress as `0x${string}`,
+    l2Config.nexusDeployment as `0x${string}`,
+    keystoreConfig.salt as `0x${string}`,
+    keystoreConfig.keystoreAddress as `0x${string}`,
     constructCalldata()
   );
 
@@ -68,8 +73,11 @@ export async function sendBundle() {
     hash: bundleTxHash,
   });
 
-  console.log(`Bundle executed at ${receipt.blockNumber}: ${bundleTxHash}`);
-  console.log(`UserOp: ${userOpHash}`);
+  console.log();
+  console.log(
+    `Bundle executed at L2 block ${receipt.blockNumber}.\n\tTx Hash: ${bundleTxHash}`
+  );
+  console.log(`UserOp executed.\n\tUserOp Hash: ${userOpHash}`);
 }
 
 async function constructUserOp(
@@ -153,11 +161,23 @@ async function constructKeystoreUserOpSignature(
     ]);
     keyData = data;
 
-    console.log("Using counterfactual keystore account");
+    console.log(
+      `Keystore account ${keystoreAddress} is ${bold(
+        "counterfactual"
+      )}.\n\tData Hash: ${keccak256(
+        data
+      )}\n\tVkey Hash: ${vkeyHash}\n\tSalt (only necessary for counterfactual accounts): ${salt}`
+    );
   } else {
     keyData = imtProof.state.data;
 
-    console.log("Using initialized keystore account");
+    console.log(
+      `Keystore account ${keystoreAddress} is ${bold(
+        "initialized"
+      )}.\n\tData Hash: ${keccak256(
+        data
+      )}\n\tVkey Hash: ${vkeyHash}\n\tSalt (always bytes32(0) for initialized accounts): ${salt}`
+    );
   }
 
   const signature = encodeAbiParameters(

@@ -3,7 +3,9 @@
 # https://keystore-docs.axiom.xyz/docs/creating-a-keystore-account-type/key-data-consumer
 consumerCodehash = "0x33d63c53bcedeb7cfdc1d7d4598c93ab541ed3099dc0d6f165a56ac8c91cb3df"
 
-# This is a parameter stored in the Keystore Validator to support expiry checks. Read more about it here: https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/overview#expiry-checks
+# This is a parameter stored in the Keystore Validator to support expiry checks. Read more about it here: https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/overview#expiry-checks.
+#
+# The value is measured in seconds.
 invalidationTime = 6000
 
 # Signing threshold for an action. Essentially, the `m` in an `m-of-n` scheme.

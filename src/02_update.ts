@@ -15,6 +15,8 @@ import {
   AuthenticationStatusEnum,
   AXIOM_ACCOUNT,
   AXIOM_ACCOUNT_AUTH_INPUTS,
+  AXIOM_CODEHASH,
+  AXIOM_EOA,
   BlockTag,
   encodeMOfNData,
   KeystoreAccountBuilder,
@@ -24,13 +26,15 @@ import {
   type SponsorAuthInputs,
   type UpdateTransactionRequest,
 } from "@axiom-crypto/keystore-sdk";
-import { decodeAbiParameters } from "viem";
+import { concat, decodeAbiParameters, encodeAbiParameters } from "viem";
+import { sleep } from "bun";
+import { green, yellow } from "./utils";
 
 const RETRY_INTERVAL_SEC = 30;
 const MAX_RETRIES = 20;
 
 (async () => {
-  const tomlContent = readFileSync("src/_account.toml", "utf-8");
+  const tomlContent = readFileSync("src/_accountKeystore.toml", "utf-8");
   const config = parse(tomlContent);
 
   const keystoreAddress = config.keystoreAddress as `0x${string}`;
@@ -38,7 +42,7 @@ const MAX_RETRIES = 20;
     await nodeProvider.getTransactionCount(keystoreAddress, BlockTag.Latest)
   );
 
-  // Initialize the keystore account based on whether the account is counterfactual or not.
+  // Initialize KeystoreAccount object based on whether the account is counterfactual or not.
   let keystoreAccount;
   let eoaAddrs: `0x${string}`[];
   if (nonce === 0n) {
@@ -98,7 +102,41 @@ const MAX_RETRIES = 20;
     },
   };
 
-  console.log("Sending sponsor authentication request to signature prover");
+  const keyData = concat([
+    "0x00",
+    encodeAbiParameters(
+      [
+        { name: "codehash", type: "bytes32" },
+        { name: "threshold", type: "uint256" },
+        { name: "eoaAddrs", type: "address[]" },
+      ],
+      [consumerCodehash, threshold, eoaAddrs]
+    ),
+  ]);
+  const sponsorKeyData = concat([
+    "0x00",
+    encodeAbiParameters(
+      [
+        { name: "codehash", type: "bytes32" },
+        { name: "threshold", type: "uint256" },
+        { name: "eoaAddrs", type: "address[]" },
+      ],
+      [AXIOM_CODEHASH, 0n, [AXIOM_EOA]]
+    ),
+  ]);
+
+  console.log();
+  console.log(
+    `Sending request to generate ZK proof to signature prover...\n\t${green(
+      "User Key Data (from keystore)"
+    )}: ${keyData}\n\t${green(
+      "User Auth Data (signatures)"
+    )}: [${userSig}]\n\t${green(
+      "Sponsor Key Data"
+    )}: ${sponsorKeyData}\n\t${green(
+      "Sponsor Auth Data (no sigs required on testnet)"
+    )}: []`
+  );
 
   const requestHash =
     await signatureProverProvider.sponsorAuthenticateTransaction(
@@ -106,24 +144,25 @@ const MAX_RETRIES = 20;
       sponsorAuthInputs
     );
 
-  console.log("Request hash:", requestHash);
+  console.log(`${yellow("\tRequest hash: ")} ${requestHash}`);
+  console.log();
   console.log(
-    "Waiting for sponsor authentication to complete. This may take several minutes..."
+    "Waiting for sponsor authentication to complete. This typically takes ~6 minutes...\n\t(with the recent OpenVM v1.0.0-rc.1 release this will also be ~30% shorter)"
   );
 
-  // polls the request status until it's completed
+  let i = 0;
+
+  // Polls the request status until it's completed
   const authenticatedTx = await (async () => {
     while (true) {
       const status =
         await signatureProverProvider.getSponsorAuthenticationStatus(
           requestHash
         );
-      console.log("Sponsor authentication status:", status.status);
+      console.log(`\tTime elapsed: ${(i++ * RETRY_INTERVAL_SEC) / 60} minutes`);
       switch (status.status) {
         case AuthenticationStatusEnum.Pending:
-          await new Promise((resolve) =>
-            setTimeout(resolve, RETRY_INTERVAL_SEC * 1000)
-          );
+          await sleep(RETRY_INTERVAL_SEC * 1000);
           continue;
         case AuthenticationStatusEnum.Failed:
           throw new Error("Transaction authentication failed");
@@ -131,7 +170,7 @@ const MAX_RETRIES = 20;
           if (!status.authenticatedTransaction) {
             throw new Error("No authenticated transaction found");
           }
-          console.log("Sponsor authentication completed");
+          console.log("\tSponsor authentication completed");
           return status.authenticatedTransaction;
         default:
           throw new Error("Invalid authentication status");
@@ -139,33 +178,43 @@ const MAX_RETRIES = 20;
     }
   })();
 
-  console.log("Sending transaction to sequencer");
+  console.log();
+  console.log("Sending transaction to sequencer...");
   const txHash = await sequencerProvider.sendRawTransaction(authenticatedTx);
-  console.log("Transaction sent to sequencer", txHash);
+  console.log("\tTxHash:", txHash);
 
   let currentStatus = "";
 
-  // polls the transaction receipt until it's finalized
+  console.log();
+  console.log("Waiting for transaction to be finalized...");
+
+  // Polls the transaction receipt until it's finalized
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
       const receipt = await nodeProvider.getTransactionReceipt(txHash);
+
       if (receipt.status !== currentStatus) {
         currentStatus = receipt.status;
-        console.log("Transaction status:", currentStatus);
+        console.log(`\tStatus: ${currentStatus}`);
       }
+
       if (currentStatus === TransactionStatus.L2FinalizedL1Included) {
-        console.log("Success: transaction finalized!");
+        console.log(`\t${green("Success: transaction finalized!")}`);
+        console.log();
+        console.log(
+          `Verify the transaction was successful with:\ncast rpc keystore_getStateAt ${keystoreAddress} "latest" --rpc-url $KEYSTORE_NODE_RPC_URL`
+        );
         return;
       }
+
       console.log(
-        `Checking transaction status again in ${RETRY_INTERVAL_SEC} seconds`
+        `\tChecking transaction status again in ${RETRY_INTERVAL_SEC} seconds`
       );
     } catch (err) {
-      console.log("Transaction not yet included in block");
+      console.log("\tTransaction not yet included in block");
     }
-    await new Promise((resolve) =>
-      setTimeout(resolve, RETRY_INTERVAL_SEC * 1000)
-    );
+
+    await sleep(RETRY_INTERVAL_SEC * 1000);
   }
 })();
 

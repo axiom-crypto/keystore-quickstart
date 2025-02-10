@@ -6,7 +6,7 @@ import {
   publicClientSepolia,
 } from "./_setup";
 import { abi as L1BlockAbi } from "../abis/L1Block.json";
-import { toHex, toRlp } from "viem";
+import { keccak256, toHex, toRlp } from "viem";
 
 (async () => {
   const cacheTxHash = await keystoreValidatorModule.write.cacheBlockhash();
@@ -45,13 +45,18 @@ import { toHex, toRlp } from "viem";
       },
     ]);
 
-  const cacheStateRootReceipt =
-    await publicClientBaseSepolia.waitForTransactionReceipt({
-      confirmations: 1,
-      hash: cacheStateRootTx,
-    });
+  await publicClientBaseSepolia.waitForTransactionReceipt({
+    confirmations: 1,
+    hash: cacheStateRootTx,
+  });
 
-  console.log("Cache State Root Receipt:", cacheStateRootReceipt);
+  console.log(
+    `Keystore state root cached.\n\tNumber of L1 Blockhash: ${blockNumber}\n\tL1 Blockhash: ${keccak256(
+      rlpBlockHeader
+    )}\n\tState Root Cache Tx Hash: ${cacheStateRootTx}\n\tState Root: ${toHex(
+      proof.storageProof[0].value
+    )}`
+  );
 })();
 
 async function _getRLPBlockHeader(l1BlockNumber: bigint) {

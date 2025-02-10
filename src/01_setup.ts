@@ -30,7 +30,6 @@ import { sendBundle } from "./bundle/sendBundle.ts";
 // Deploy Nexus instance
 // Counterfactually initialize a keystore account
 // Install Keystore validator
-// Send first userOp
 
 (async () => {
   const nexusDeployment = await deployNexusInstance();
@@ -38,21 +37,31 @@ import { sendBundle } from "./bundle/sendBundle.ts";
   // Randomly generate a salt for counterfactual initialization
   const salt = pad(toHex(Math.floor(Math.random() * 1000000000)));
   const keystoreAddress = keccak256(concat([salt, dataHash, vkeyHash]));
+
+  console.log(
+    `\nCounterfactually initializing keystore account...\n\tSalt: ${salt}\n\tData Hash: ${dataHash}\n\tVkey Hash: ${vkeyHash}\n\tKeystore Address: ${keystoreAddress}`
+  );
+
   await installKeystoreValidator(
     nexusDeployment,
     invalidationTime,
     keystoreAddress
   );
 
-  const tomlData = {
+  const smartAccountTomlData = {
     nexusDeployment,
+  };
+  const keystoreAccountTomlData = {
     salt,
     keystoreAddress,
   };
-  writeFileSync("src/_account.toml", stringify(tomlData));
+  writeFileSync("src/_accountL2.toml", stringify(smartAccountTomlData));
+  writeFileSync(
+    "src/_accountKeystore.toml",
+    stringify(keystoreAccountTomlData)
+  );
 
   console.log();
-  await sendBundle();
 })();
 
 async function deployNexusInstance() {
@@ -85,7 +94,7 @@ async function deployNexusInstance() {
   const nexusDeployment = slice(log?.topics[1]!, 12);
 
   console.log(
-    `Nexus instance deployed at ${nexusDeployment}. TxHash: ${receipt.transactionHash}`
+    `Nexus instance deployed at ${nexusDeployment}.\n\tTxHash: ${receipt.transactionHash}`
   );
 
   const sendTxHash = await walletClientBaseSepolia.sendTransaction({
@@ -96,7 +105,7 @@ async function deployNexusInstance() {
     hash: sendTxHash,
   });
   console.log(
-    `Sent ether to smart account. TxHash: ${sendReceipt.transactionHash}`
+    `Sent ether to smart account (for userOp execution).\n\tTxHash: ${sendReceipt.transactionHash}`
   );
 
   return nexusDeployment;
@@ -152,5 +161,5 @@ async function installKeystoreValidator(
   await publicClientBaseSepolia.waitForTransactionReceipt({
     hash: bundleTxHash,
   });
-  console.log(`Keystore validator installed. TxHash: ${bundleTxHash}`);
+  console.log(`Keystore validator installed.\n\tTxHash: ${bundleTxHash}`);
 }
