@@ -12,9 +12,9 @@ This repository houses a series of scripts to help you explore and understand th
 
 ## Overview
 
-The scripts are meant to be run in a specific order with Base Sepolia acting as the consuming rollup and Sepolia as the L1 hosting the Keystore rollup bridge. Throughout the demos, we use Biconomy’s [Nexus](https://github.com/bcnmy/nexus), an ERC-7579–compatible smart account, as the transacting smart account and the authentication rule being enforced is an m-of-n vkey created by Axiom.
+The scripts are meant to be run in a specific order with Base Sepolia acting as the consuming rollup and Sepolia as the L1 hosting the Keystore rollup bridge. Throughout the demos, we use Biconomy’s [Nexus](https://github.com/bcnmy/nexus), an ERC-7579–compatible smart account, as the transacting smart account. The authentication rule being enforced is an m-of-n ECDSA signature verification created by Axiom.
 
-Additionally, rather than depend on an external bundler, the scripts self-bundle the `userOp`s and require you to provide a funded Base Sepolia private key. The scripts are as follows:
+Rather than depend on an external bundler, the scripts self-bundle the `userOp`s and require the user to provide a funded Base Sepolia private key. The scripts are as follows:
 
 - `bundle/sendBundle.ts`: Constructs and executes a `userOp` bundle for a keystore-enabled smart account. This is the only script that can be executed at any time (not order-dependent) after the setup.
 - `01_setup.ts`: Deploys a keystore-enabled smart account and sends the first `userOp`.
@@ -111,7 +111,7 @@ bun run src/02_update.ts
 You can verify the update by querying the keystore account's state.
 
 ```bash
-cast rpc keystore_getStateAt <keystoreAddress> "latest' --rpc-url $KEYSTORE_RPC_URL
+cast rpc keystore_getStateAt <keystoreAddress> "latest" --rpc-url $KEYSTORE_RPC_URL
 ```
 
 If you immediately try sending another bundle with the `sendBundle.ts` script, you might notice that it still uses the counterfactual keystore account. This means that the new update has not propagated to Base Sepolia yet. Base Sepolia reads L1 blocks at a delay of approximately one epoch, meaning you must wait ~7 minutes for the update to propagate.
