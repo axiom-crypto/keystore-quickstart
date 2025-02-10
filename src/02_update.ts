@@ -204,7 +204,7 @@ const MAX_RETRIES = 20;
         console.log(`\t${green("Success: transaction finalized!")}`);
         console.log();
         console.log(
-          `Verify the transaction was successful with:\ncast rpc keystore_getStateAt ${keystoreAddress} "latest" --rpc-url $KEYSTORE_NODE_RPC_URL`
+          `Verify the transaction was successful with:\ncast rpc keystore_getStateAt ${keystoreAddress} "latest" --rpc-url $KEYSTORE_NODE_RPC_URL | jq`
         );
         return;
       }
