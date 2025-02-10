@@ -96,7 +96,7 @@ Run the script with
 bun run src/bundle/sendBundle.ts
 ```
 
-This script will build the `userOp` to be executed which will include constructing the IMT proof of the state at the `keystoreAddress` relevant to the smart account. To read more about the IMT proof construction, see the [Transaction on L2s docs](https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/transaction#modifying-the-useroperation-signature).
+This script will build the `userOp` to be executed which will include constructing the IMT proof of the state at the `keystoreAddress` relevant to the smart account. To read more about the IMT proof construction, see the [Transacting on L2s docs](https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/transaction#modifying-the-useroperation-signature).
 
 It will then send the `userOp` to the `EntryPoint` for execution. The console output will look something like:
 
@@ -138,7 +138,7 @@ You can verify the update by querying the keystore account's state.
 cast rpc keystore_getStateAt <keystoreAddress> "latest" --rpc-url $KEYSTORE_RPC_URL
 ```
 
-If you immediately try sending another bundle with the `sendBundle.ts` script, you might notice that it still uses the counterfactual keystore account. This means that the new update has not propagated to Base Sepolia yet which happens because Base Sepolia reads L1 blocks at a [delay](https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/key-rotation#send-an-update-transaction-with-the-sdk#latency). In most cases, this delay is under 10 minutes, however, in the worse case, it could take up to 12 hours during sequencer downtime.
+If you immediately try sending another bundle with the `sendBundle.ts` script, you might notice that it still uses the counterfactual keystore account. This means that the new update has not propagated to Base Sepolia yet which happens because Base Sepolia reads L1 blocks at a [delay](https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/key-rotation#send-an-update-transaction-with-the-sdk#latency). In most cases, this delay is under 10 minutes, however, in the worst case, it could take up to 12 hours during sequencer downtime.
 
 Since this is the first update for the `keystoreAddress`, you can verify the update was propagated by checking that `userOp`s are no longer using a counterfactual keystore account.
 
