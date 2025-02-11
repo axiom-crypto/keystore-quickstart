@@ -38,14 +38,16 @@ Configure the environment variables in the `.env` file.
 cp .env.example .env
 ```
 
+In the `.env` file, the variables are:
+
 - `SEPOLIA_RPC_URL`: The RPC URL of the Sepolia L1.
 - `BASE_SEPOLIA_RPC_URL`: The RPC URL of the Base Sepolia L2.
 - `KEYSTORE_NODE_RPC_URL`: The RPC URL of the Keystore Node.
 - `KEYSTORE_SEQUENCER_RPC_URL`: The RPC URL of the Keystore Sequencer.
 - `KEYSTORE_SIGNATURE_PROVER_RPC_URL`: The RPC URL of the Keystore Signature Prover.
 - `KEYSTORE_VALIDATOR_L2_ADDRESS`: The address of the Keystore Validator on L2.
-- `KEYSTORE_BRIDGE_ADDRESS`: The address of the Keystore Bridge on L2.
-- `BUNDLING_PRIVATE_KEY`: The private key of the funded account on Base Sepolia.
+- `KEYSTORE_BRIDGE_ADDRESS`: The address of the Keystore Bridge on L1.
+- `BUNDLING_PRIVATE_KEY`: The private key of the address on Base Sepolia used to self-bundle. This address must be funded.
 
 Fill out the `src/_setup.toml` file with the desired parameters. Functional defaults are provided.
 
@@ -152,7 +154,7 @@ If it was in fact propagated, you should see something like:
 Keystore account 0x6c84bc0ad517f85f66f79382b24960cd14439e4dbf74876c4a28c98267243a2f is initialized.
         Data Hash: 0x453837526a5a49823d092f77606072f026128ce3bf5c2be58486da4f437fcd53
         Vkey Hash: 0x2c888117ecac3bb6b986f4a34f0766fa9c42eb4aedf1e62086ac5447257d0084
-        Salt (always bytes32(0) for initialized accounts): 0x000000000000000000000000000000000000000000000000000000001f463f8f
+        Salt (always bytes32(0) for initialized accounts): 0x0000000000000000000000000000000000000000000000000000000000000000
 
 Bundle executed at L2 block 21728573.
         Tx Hash: 0x410f6b09a2901b21bb302d9d1fbdabacae6b53a3b431fc054374947a181558d5

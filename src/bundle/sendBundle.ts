@@ -1,4 +1,4 @@
-import { concat, encodeAbiParameters, keccak256 } from "viem";
+import { concat, encodeAbiParameters, keccak256, pad } from "viem";
 import {
   account1,
   data,
@@ -176,7 +176,9 @@ async function constructKeystoreUserOpSignature(
         "initialized"
       )}.\n\tData Hash: ${keccak256(
         data
-      )}\n\tVkey Hash: ${vkeyHash}\n\tSalt (always bytes32(0) for initialized accounts): ${salt}`
+      )}\n\tVkey Hash: ${vkeyHash}\n\tSalt (always bytes32(0) for initialized accounts): ${pad(
+        "0x00"
+      )}`
     );
   }
 
