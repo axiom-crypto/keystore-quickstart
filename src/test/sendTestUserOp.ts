@@ -1,4 +1,4 @@
-import { concat, encodeAbiParameters, keccak256, pad } from "viem";
+import { concat, encodeAbiParameters, keccak256, pad, toHex } from "viem";
 import {
   account1,
   data,
@@ -12,15 +12,16 @@ import {
 } from "../_setup";
 import { readFileSync } from "fs";
 import { parse } from "@iarna/toml";
-import { bold } from "../utils";
+import { bold, hyperlink, yellow } from "../utils";
 
-// Conditionally execute `sendBundle` if the script is run directly
-if (import.meta.main) {
-  sendBundle().catch((error) => {
-    console.error("Error during execution:", error);
-    process.exit(1);
-  });
-}
+// Some random target
+const transferTarget = "0x171902257ef62B882BCA7ddBd48C179eB0A50Bc5";
+// 1 wei
+const value = 1;
+
+(async () => {
+  await sendTestUserOp();
+})();
 
 // Nexus-specific
 // For demonstration purposes, we will send 1 wei to a random target
@@ -29,12 +30,12 @@ function constructCalldata() {
   const executeMode =
     "0x0000000000000000000000000000000000000000000000000000000000000000";
 
-  // Some random target
-  const target = "0x171902257ef62B882BCA7ddBd48C179eB0A50Bc5";
-  const value =
-    "0x0000000000000000000000000000000000000000000000000000000000000001";
   const calldata = "0x";
-  const executionCalldata = concat([target, value, calldata]);
+  const executionCalldata = concat([
+    transferTarget,
+    pad(toHex(value)),
+    calldata,
+  ]);
 
   const executionCalldataOffset =
     "0x0000000000000000000000000000000000000000000000000000000000000040";
@@ -49,7 +50,7 @@ function constructCalldata() {
   return concat([executeSig, executeMode, executionCalldataBuffer]);
 }
 
-export async function sendBundle() {
+async function sendTestUserOp() {
   const l2TomlContent = readFileSync("src/_accountL2.toml", "utf-8");
   const keystoreTomlContent = readFileSync(
     "src/_accountKeystore.toml",
@@ -75,9 +76,19 @@ export async function sendBundle() {
 
   console.log();
   console.log(
-    `Bundle executed at L2 block ${receipt.blockNumber}.\n\tTx Hash: ${bundleTxHash}`
+    `Sent ${value} wei from smart account ${hyperlink(
+      packedUserOp.sender,
+      `https://sepolia.basescan.org/address/${packedUserOp.sender}`
+    )} to address ${transferTarget} on Base Sepolia using authentication from keystore account ${
+      keystoreConfig.keystoreAddress
+    }\n\tBundle Tx Hash: ${hyperlink(
+      bundleTxHash,
+      `https://sepolia.basescan.org/tx/${bundleTxHash}`
+    )}\n\tUserOp Hash: ${hyperlink(
+      userOpHash,
+      `https://sepolia.basescan.org/tx/${userOpHash}`
+    )}`
   );
-  console.log(`UserOp executed.\n\tUserOp Hash: ${userOpHash}`);
 }
 
 async function constructUserOp(
@@ -162,8 +173,8 @@ async function constructKeystoreUserOpSignature(
     keyData = data;
 
     console.log(
-      `Keystore account ${keystoreAddress} is ${bold(
-        "counterfactual"
+      `Keystore account ${keystoreAddress} is ${yellow(
+        bold("counterfactual")
       )}.\n\tData Hash: ${keccak256(
         data
       )}\n\tVkey Hash: ${vkeyHash}\n\tSalt (only necessary for counterfactual accounts): ${salt}`

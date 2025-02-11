@@ -6,7 +6,7 @@ This repository houses a series of scripts to help you explore and understand th
 - [Running the Scripts](#running-the-scripts)
   - [Setup](#setup)
   - [`01_setup.ts`](01_setupts)
-  - [`bundle/sendBundle.ts`](#bundlesendbundlets)
+  - [`test/sendTestUserOp.ts`](#bundlesendbundlets)
   - [`02_update.ts`](#02_updatets)
     - [Re-Orgs](#re-orgs)
   - [`02a_sync.ts`](#02a_syncts)
@@ -21,7 +21,7 @@ All deployments can be found in the [docs](https://keystore-docs.axiom.xyz/docs/
 
 Rather than depend on an external bundler, the scripts self-bundle the `userOp`s and require the user to provide a funded Base Sepolia private key. The scripts are as follows:
 
-- `bundle/sendBundle.ts`: Constructs and executes a `userOp` bundle for a keystore-enabled smart account that sends some ether to a target address. This is the only script that can be executed at any time (not order-dependent) after the setup.
+- `test/sendTestUserOp.ts`: Constructs and executes a `userOp` bundle for a keystore-enabled smart account that sends some ether to a target address. This is the only script that can be executed at any time (not order-dependent) after the setup.
 - `01_setup.ts`: Deploys a keystore-enabled smart account.
 - `02_update.ts`: Runs through the entire process of making an update on the keystore.
 - `02a_sync.ts`: An optional extension to the update script which syncs the new state to L2.
@@ -31,6 +31,9 @@ In the following sections, we will walk through the scripts in detail. At variou
 ## Running the Scripts
 
 ### Setup 
+
+> [!NOTE]
+> If you are on Windows, we highly recommend using [WSL 2](https://learn.microsoft.com/en-us/windows/wsl/install).
 
 Configure the environment variables in the `.env` file.
 
@@ -50,6 +53,13 @@ In the `.env` file, the variables are:
 - `BUNDLING_PRIVATE_KEY`: The private key of the address on Base Sepolia used to self-bundle. This address must be funded.
 
 Fill out the `src/_setup.toml` file with the desired parameters. Functional defaults are provided.
+
+Install `bun` and foundry
+
+```bash
+curl -fsSL https://bun.sh/install | bash
+curl -L https://foundry.paradigm.xyz | bash
+```
 
 Install dependencies
 
@@ -90,12 +100,12 @@ keystoreAddress = "0xdbb8e3151321148596b94e7558b8bb098a9447132f95e6aa32ee02c96c6
 - `salt`: The random salt used to generate the keystore address.
 - `keystoreAddress`: The newly generated keystore address.
 
-### `bundle/sendBundle.ts`
+### `test/sendTestUserOp.ts`
 
 Run the script with
 
 ```bash
-bun run src/bundle/sendBundle.ts
+bun run src/test/sendTestUserOp.ts
 ```
 
 This script will build the `userOp` to be executed which will include constructing the IMT proof of the state at the `keystoreAddress` relevant to the smart account. To read more about the IMT proof construction, see the [Transacting on L2s docs](https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/transaction#modifying-the-useroperation-signature).
@@ -145,7 +155,7 @@ If you immediately try sending another bundle with the `sendBundle.ts` script, y
 Since this is the first update for the `keystoreAddress`, you can verify the update was propagated by checking that `userOp`s are no longer using a counterfactual keystore account.
 
 ```bash
-bun run src/bundle/sendBundle.ts
+bun run src/test/sendTestUserOp.ts
 ```
 
 If it was in fact propagated, you should see something like:
