@@ -126,7 +126,7 @@ const MAX_RETRIES = 20;
   ]);
 
   console.log(
-    `Sending request to generate ZK proof to signature prover rpc...\n\t${green(
+    `Sending request to generate ZK proof to signature prover RPC...\n\t${green(
       "User Key Data (from keystore)"
     )}: ${keyData}\n\t${green(
       "User Auth Data (signatures)"
