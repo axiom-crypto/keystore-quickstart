@@ -13,3 +13,7 @@ export function yellow(text: string) {
 export function hyperlink(text: string, url: string) {
   return `\x1b[1;34m\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\\x1b[0m`;
 }
+
+export function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
