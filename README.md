@@ -78,22 +78,23 @@ bun run src/01_setup.ts
 This script will:
 
 - Deploy a Nexus instance.
-- Counterfactually initialize a keystore account.
-  - To read more about counterfactual initialization, see the [Account Initialization docs](https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/counterfactual).
+  - Fund the smart account with some ether for userOp execution.
 - Install the Keystore Validator as a module.
   - To read more about the Keystore Validator, see the [Keystore Validator docs](https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/overview#integrating-smart-accounts-with-the-keystore-validator).
+- Counterfactually initialize a keystore account.
+  - To read more about counterfactual initialization, see the [Account Initialization docs](https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/counterfactual).
 
 In addition, it will output the `_accountL2.toml` and `_accountKeystore.toml` files which contain the necessary smart account / keystore account metadata to transact on L2s and the keystore. Below are example `_accountL2.toml` and `_accountKeystore.toml` files:
 
 ```toml
 # _accountL2.toml
-nexusDeployment = "0x2915cbf304516268c8b5e74281558498613f570d"
+nexusDeployment = "0x20e2dd05c3a028f21e1ddd7ff00c473eac52e7b9"
 ```
 
 ```toml
 # _accountKeystore.toml
-salt = "0x000000000000000000000000000000000000000000000000000000002e493b25"
-keystoreAddress = "0xdbb8e3151321148596b94e7558b8bb098a9447132f95e6aa32ee02c96c633889"
+salt = "0x000000000000000000000000000000000000000000000000000000002b1f8a5c"
+keystoreAddress = "0xa6bb3accb4dd6c5dd3b05f1b684de4b1423af0180d5e5335170438fd5d874bee"
 ```
 
 - `nexusDeployment`: The address of the newly deployed Nexus smart account instance.
@@ -113,15 +114,14 @@ This script will build the `userOp` to be executed which will include constructi
 It will then send the `userOp` to the `EntryPoint` for execution. The console output will look something like:
 
 ```bash
-Keystore account 0x6c84bc0ad517f85f66f79382b24960cd14439e4dbf74876c4a28c98267243a2f is counterfactual.
+Keystore account 0xa6bb3accb4dd6c5dd3b05f1b684de4b1423af0180d5e5335170438fd5d874bee is counterfactual.
         Data Hash: 0x453837526a5a49823d092f77606072f026128ce3bf5c2be58486da4f437fcd53
         Vkey Hash: 0x2c888117ecac3bb6b986f4a34f0766fa9c42eb4aedf1e62086ac5447257d0084
-        Salt (only necessary for counterfactual accounts): 0x000000000000000000000000000000000000000000000000000000001f463f8f
+        Salt (only necessary for counterfactual accounts): 0x000000000000000000000000000000000000000000000000000000002b1f8a5c
 
-Bundle executed at L2 block 21724484.
-        Tx Hash: 0x0d3fe4cef326c0eeccd7a27103f6c0f0f4e7817eb29efa10086f18426357bae0
-UserOp executed.
-         UserOp Hash: 0xeeceb4decd438bbaa755629ce2c92b2e1d739c61b0750092ee6e5fa8cc14bed6
+Sent 1 wei from smart account 0x20e2dd05c3a028f21e1ddd7ff00c473eac52e7b9 to address 0x171902257ef62B882BCA7ddBd48C179eB0A50Bc5 on Base Sepolia using authentication from keystore account 0xa6bb3accb4dd6c5dd3b05f1b684de4b1423af0180d5e5335170438fd5d874bee
+        Bundle Tx Hash: 0x8302db5d733ba1c209dca7410697d16c97fb1e3ac5567fd8adbeba6904b8597b
+        UserOp Hash: 0x5560639825d13724248ec293e5cc88264b5943ea0e6faf274d5ff5bd1977b832
 ```
 
 Running this right after the set up step will result in transacting with a counterfactual keystore account.

@@ -183,8 +183,8 @@ async function constructKeystoreUserOpSignature(
     keyData = imtProof.state.data;
 
     console.log(
-      `Keystore account ${keystoreAddress} is ${bold(
-        "initialized"
+      `Keystore account ${keystoreAddress} is ${yellow(
+        bold("initialized")
       )}.\n\tData Hash: ${keccak256(
         data
       )}\n\tVkey Hash: ${vkeyHash}\n\tSalt (always bytes32(0) for initialized accounts): ${pad(
