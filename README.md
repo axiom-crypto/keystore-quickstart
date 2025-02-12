@@ -32,9 +32,6 @@ In the following sections, we will walk through the scripts in detail. At variou
 
 ### Setup 
 
-> [!NOTE]
-> If you are on Windows, we highly recommend using [WSL 2](https://learn.microsoft.com/en-us/windows/wsl/install).
-
 Configure the environment variables in the `.env` file.
 
 ```bash
@@ -66,6 +63,9 @@ Install dependencies
 ```bash
 bun install
 ```
+
+> [!NOTE]
+> If you are on Windows, we highly recommend using [WSL 2](https://learn.microsoft.com/en-us/windows/wsl/install).
 
 ### `01_setup.ts`
 
