@@ -27,8 +27,7 @@ import {
   type UpdateTransactionRequest,
 } from "@axiom-crypto/keystore-sdk";
 import { concat, decodeAbiParameters, encodeAbiParameters } from "viem";
-import { sleep } from "bun";
-import { green, yellow } from "./utils";
+import { green, sleep, yellow } from "./utils";
 
 const RETRY_INTERVAL_SEC = 30;
 const MAX_RETRIES = 20;
@@ -256,7 +255,4 @@ function constructNewUserData() {
   const newSignersList = [...signers, newAuthorizedAddress];
 
   return encodeMOfNData(consumerCodehash, threshold, newSignersList);
-}
-function mkdir(arg0: string, arg1: { recursive: boolean }) {
-  throw new Error("Function not implemented.");
 }
