@@ -9,6 +9,8 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@axiom-crypto/keystore-sdk": "^0.2.1-alpha.1",
+    "@iarna/toml": "^2.2.5",
     "viem": "^2.22.17"
   }
 }
