@@ -24,3 +24,4 @@ _accountL2.toml
 _accountKeystore.toml
 
 .vscode
+debug/

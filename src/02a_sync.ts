@@ -7,6 +7,7 @@ import {
 } from "./_setup";
 import { abi as L1BlockAbi } from "../abis/L1Block.json";
 import { keccak256, toHex, toRlp } from "viem";
+import { hyperlink } from "./utils";
 
 (async () => {
   const cacheTxHash = await keystoreValidatorModule.write.cacheBlockhash();
@@ -50,12 +51,19 @@ import { keccak256, toHex, toRlp } from "viem";
     hash: cacheStateRootTx,
   });
 
+  const blockhash = keccak256(rlpBlockHeader);
+
   console.log(
-    `Keystore state root cached.\n\tNumber of L1 Blockhash: ${blockNumber}\n\tL1 Blockhash: ${keccak256(
-      rlpBlockHeader
-    )}\n\tState Root Cache Tx Hash: ${cacheStateRootTx}\n\tState Root: ${toHex(
-      proof.storageProof[0].value
-    )}`
+    `Keystore state root cached.\n\tNumber of L1 Blockhash: ${hyperlink(
+      blockNumber.toString(),
+      `https://sepolia.etherscan.io/block/${blockNumber}`
+    )}\n\tL1 Blockhash: ${hyperlink(
+      blockhash,
+      `https://sepolia.etherscan.io/block/${blockhash}`
+    )}\n\tKeystore State Root Cache Tx Hash: ${hyperlink(
+      cacheStateRootTx,
+      `https://sepolia.basescan.org/tx/${cacheStateRootTx}`
+    )}\n\tKeystore State Root: ${toHex(proof.storageProof[0].value)}`
   );
 })();
 

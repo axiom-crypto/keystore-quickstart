@@ -1,4 +1,4 @@
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { parse } from "@iarna/toml";
 import {
   dataHash,
@@ -89,9 +89,7 @@ const MAX_RETRIES = 20;
     userAcct: keystoreAccount,
     sponsorAcct: AXIOM_ACCOUNT,
   };
-  console.log("\n===== TRANSACTION REQUEST (DEBUG INFO) =====\n");
-  console.log(txReq);
-  console.log("\n========================================\n");
+
   const updateTx = UpdateTransactionBuilder.fromTransactionRequest(txReq);
   const userSig = await updateTx.sign(privKey1);
 
@@ -127,16 +125,15 @@ const MAX_RETRIES = 20;
     ),
   ]);
 
-  console.log();
   console.log(
-    `Sending request to generate ZK proof to signature prover...\n\t${green(
+    `Sending request to generate ZK proof to signature prover RPC...\n\t${green(
       "User Key Data (from keystore)"
     )}: ${keyData}\n\t${green(
       "User Auth Data (signatures)"
     )}: [${userSig}]\n\t${green(
-      "Sponsor Key Data"
+      "Sponsor Key Data (from keystore)"
     )}: ${sponsorKeyData}\n\t${green(
-      "Sponsor Auth Data (no sigs required on testnet)"
+      "Sponsor Auth Data (for private devnet, the sponsor account is chosen to require no authentication)"
     )}: []`
   );
 
@@ -149,12 +146,24 @@ const MAX_RETRIES = 20;
   console.log(`${yellow("\tRequest hash: ")} ${requestHash}`);
   console.log();
   console.log(
-    "Waiting for sponsor authentication to complete. This typically takes ~6 minutes...\n\t(with the recent OpenVM v1.0.0-rc.1 release this will also be ~30% shorter)"
+    "Waiting for sponsor authentication to complete. This typically takes ~6 minutes...\n\t(with the recent OpenVM v1.0.0-rc.1 release, this will also be ~30% shorter)"
   );
 
-  let i = 0;
+  // Write the transaction request to a file for debugging purposes
+  try {
+    mkdirSync("src/debug", { recursive: true });
+    const txJson = JSON.stringify(
+      txReq,
+      (_, value) => (typeof value === "bigint" ? value.toString() : value),
+      2
+    );
+    writeFileSync(`src/debug/${requestHash}.json`, txJson);
+  } catch (err) {
+    console.error("Error writing debug file", err);
+  }
 
   // Polls the request status until it's completed
+  let i = 0;
   const authenticatedTx = await (async () => {
     while (true) {
       const status =
@@ -172,7 +181,7 @@ const MAX_RETRIES = 20;
           if (!status.authenticatedTransaction) {
             throw new Error("No authenticated transaction found");
           }
-          console.log("\tSponsor authentication completed");
+          console.log(`\t${green("Sponsor authentication completed!")}`);
           return status.authenticatedTransaction;
         default:
           throw new Error("Invalid authentication status");
@@ -181,37 +190,54 @@ const MAX_RETRIES = 20;
   })();
 
   console.log();
-  console.log("Sending transaction to sequencer...");
+  console.log("Sending transaction to keystore sequencer...");
   const txHash = await sequencerProvider.sendRawTransaction(authenticatedTx);
-  console.log("\tTxHash:", txHash);
-
-  let currentStatus = "";
+  console.log("\tKeystore Tx Hash:", txHash);
 
   console.log();
   console.log("Waiting for transaction to be finalized...");
 
   // Polls the transaction receipt until it's finalized
+  let currentStatus = "";
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
       const receipt = await nodeProvider.getTransactionReceipt(txHash);
 
-      if (receipt.status !== currentStatus) {
-        currentStatus = receipt.status;
-        console.log(`\tStatus: ${currentStatus}`);
-      }
+      if (currentStatus !== receipt?.status) {
+        currentStatus = receipt?.status;
 
-      if (currentStatus === TransactionStatus.L2FinalizedL1Included) {
-        console.log(`\t${green("Success: transaction finalized!")}`);
-        console.log();
+        switch (receipt?.status) {
+          case TransactionStatus.L2Pending:
+            // Access to the sequencer mem pool is currently not implemented
+            break;
+          case TransactionStatus.L2IncludedL1Pending:
+            // Preconfirmed blocks are currently not gossiped to nodes
+            break;
+          case TransactionStatus.L2IncludedL1Included:
+            console.log(
+              `${yellow(
+                "\tStatus: transaction included in block and committed to L1"
+              )}`
+            );
+            break;
+          case TransactionStatus.L2FinalizedL1Included:
+            console.log(
+              `\t${green(
+                `Success: keystore block ${receipt?.blockNumber!} containing update transaction was finalized on L1!`
+              )}\n\nCheck the previous state of the keystore account using:\ncast rpc keystore_getStateAt ${keystoreAddress} ${
+                receipt?.blockNumber! - 1n
+              } --rpc-url http://keystore-rpc-node.axiom.xyz | jq\n\nVerify the transaction updated the keystore account state using:\ncast rpc keystore_getStateAt ${keystoreAddress} "latest" --rpc-url http://keystore-rpc-node.axiom.xyz | jq`
+            );
+            return;
+          case TransactionStatus.L2FinalizedL1Finalized:
+            // Re-org safe status is currently not implemented
+            break;
+        }
+      } else {
         console.log(
-          `Verify the transaction was successful with:\ncast rpc keystore_getStateAt ${keystoreAddress} "latest" --rpc-url $KEYSTORE_NODE_RPC_URL | jq`
+          `\tChecking transaction status again in ${RETRY_INTERVAL_SEC} seconds`
         );
-        return;
       }
-
-      console.log(
-        `\tChecking transaction status again in ${RETRY_INTERVAL_SEC} seconds`
-      );
     } catch (err) {
       console.log("\tTransaction not yet included in block");
     }
@@ -230,4 +256,7 @@ function constructNewUserData() {
   const newSignersList = [...signers, newAuthorizedAddress];
 
   return encodeMOfNData(consumerCodehash, threshold, newSignersList);
+}
+function mkdir(arg0: string, arg1: { recursive: boolean }) {
+  throw new Error("Function not implemented.");
 }
