@@ -1,4 +1,4 @@
-import { concat, encodeAbiParameters, keccak256 } from "viem";
+import { concat, encodeAbiParameters, keccak256, pad, toHex } from "viem";
 import {
   account1,
   data,
@@ -12,50 +12,56 @@ import {
 } from "../_setup";
 import { readFileSync } from "fs";
 import { parse } from "@iarna/toml";
+import { bold, hyperlink, yellow } from "../utils";
 
-// Conditionally execute `sendBundle` if the script is run directly
-if (import.meta.main) {
-  sendBundle().catch((error) => {
-    console.error("Error during execution:", error);
-    process.exit(1);
-  });
-}
+// Some random target
+const transferTarget = "0x171902257ef62B882BCA7ddBd48C179eB0A50Bc5";
+// 1 wei
+const value = 1;
+
+(async () => {
+  await sendTestUserOp();
+})();
 
 // Nexus-specific
-// For demonstration purposes, we don't really care about the execution. So we
-// just send some calldata to a random target
+// For demonstration purposes, we will send 1 wei to a random target
 function constructCalldata() {
   const executeSig = "0xe9ae5c53";
   const executeMode =
     "0x0000000000000000000000000000000000000000000000000000000000000000";
 
-  // Some random target
-  const target = "0x171902257ef62B882BCA7ddBd48C179eB0A50Bc5";
-  const value =
-    "0x0000000000000000000000000000000000000000000000000000000000000000";
-  const calldata = "0x0000";
-  const executionCalldata = concat([target, value, calldata]);
+  const calldata = "0x";
+  const executionCalldata = concat([
+    transferTarget,
+    pad(toHex(value)),
+    calldata,
+  ]);
 
   const executionCalldataOffset =
     "0x0000000000000000000000000000000000000000000000000000000000000040";
   const executionCalldataLength =
-    "0x0000000000000000000000000000000000000000000000000000000000000036";
-  const executionCallDataBuffer = concat([
+    "0x0000000000000000000000000000000000000000000000000000000000000034";
+  const executionCalldataBuffer = concat([
     executionCalldataOffset,
     executionCalldataLength,
     executionCalldata,
   ]);
 
-  return concat([executeSig, executeMode, executionCallDataBuffer]);
+  return concat([executeSig, executeMode, executionCalldataBuffer]);
 }
 
-export async function sendBundle() {
-  const tomlContent = readFileSync("src/_account.toml", "utf-8");
-  const config = parse(tomlContent);
+async function sendTestUserOp() {
+  const l2TomlContent = readFileSync("src/_accountL2.toml", "utf-8");
+  const keystoreTomlContent = readFileSync(
+    "src/_accountKeystore.toml",
+    "utf-8"
+  );
+  const l2Config = parse(l2TomlContent);
+  const keystoreConfig = parse(keystoreTomlContent);
   const { packedUserOp, userOpHash } = await constructUserOp(
-    config.nexusDeployment as `0x${string}`,
-    config.salt as `0x${string}`,
-    config.keystoreAddress as `0x${string}`,
+    l2Config.nexusDeployment as `0x${string}`,
+    keystoreConfig.salt as `0x${string}`,
+    keystoreConfig.keystoreAddress as `0x${string}`,
     constructCalldata()
   );
 
@@ -68,8 +74,21 @@ export async function sendBundle() {
     hash: bundleTxHash,
   });
 
-  console.log(`Bundle executed at ${receipt.blockNumber}: ${bundleTxHash}`);
-  console.log(`UserOp: ${userOpHash}`);
+  console.log();
+  console.log(
+    `Sent ${value} wei from smart account ${hyperlink(
+      packedUserOp.sender,
+      `https://sepolia.basescan.org/address/${packedUserOp.sender}`
+    )} to address ${transferTarget} on Base Sepolia using authentication from keystore account ${
+      keystoreConfig.keystoreAddress
+    }\n\tBundle Tx Hash: ${hyperlink(
+      bundleTxHash,
+      `https://sepolia.basescan.org/tx/${bundleTxHash}`
+    )}\n\tUserOp Hash: ${hyperlink(
+      userOpHash,
+      `https://sepolia.basescan.org/tx/${userOpHash}`
+    )}`
+  );
 }
 
 async function constructUserOp(
@@ -153,11 +172,25 @@ async function constructKeystoreUserOpSignature(
     ]);
     keyData = data;
 
-    console.log("Using counterfactual keystore account");
+    console.log(
+      `Keystore account ${keystoreAddress} is ${yellow(
+        bold("counterfactual")
+      )}.\n\tData Hash: ${keccak256(
+        data
+      )}\n\tVkey Hash: ${vkeyHash}\n\tSalt (only necessary for counterfactual accounts): ${salt}`
+    );
   } else {
     keyData = imtProof.state.data;
 
-    console.log("Using initialized keystore account");
+    console.log(
+      `Keystore account ${keystoreAddress} is ${yellow(
+        bold("initialized")
+      )}.\n\tData Hash: ${keccak256(
+        data
+      )}\n\tVkey Hash: ${vkeyHash}\n\tSalt (always bytes32(0) for initialized accounts): ${pad(
+        "0x00"
+      )}`
+    );
   }
 
   const signature = encodeAbiParameters(

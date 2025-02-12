@@ -20,6 +20,8 @@ node_modules/
 .env.production.local
 .env.local
 
-_account.toml
+_accountL2.toml
+_accountKeystore.toml
 
 .vscode
+debug/

@@ -25,34 +25,42 @@ import {
 } from "./_setup.ts";
 import { stringify } from "@iarna/toml";
 import { writeFileSync } from "fs";
-import { sendBundle } from "./bundle/sendBundle.ts";
+import { hyperlink } from "./utils.ts";
 
 // Deploy Nexus instance
 // Counterfactually initialize a keystore account
 // Install Keystore validator
-// Send first userOp
 
 (async () => {
-  const nexusDeployment = await deployNexusInstance();
-
   // Randomly generate a salt for counterfactual initialization
   const salt = pad(toHex(Math.floor(Math.random() * 1000000000)));
   const keystoreAddress = keccak256(concat([salt, dataHash, vkeyHash]));
+
+  console.log(
+    `Counterfactually initializing keystore account...\n\tSalt: ${salt}\n\tData Hash: ${dataHash}\n\tVkey Hash: ${vkeyHash}\n\tKeystore Address: ${keystoreAddress}`
+  );
+  console.log();
+
+  const nexusDeployment = await deployNexusInstance();
+
   await installKeystoreValidator(
     nexusDeployment,
     invalidationTime,
     keystoreAddress
   );
 
-  const tomlData = {
+  const smartAccountTomlData = {
     nexusDeployment,
+  };
+  const keystoreAccountTomlData = {
     salt,
     keystoreAddress,
   };
-  writeFileSync("src/_account.toml", stringify(tomlData));
-
-  console.log();
-  await sendBundle();
+  writeFileSync("src/_accountL2.toml", stringify(smartAccountTomlData));
+  writeFileSync(
+    "src/_accountKeystore.toml",
+    stringify(keystoreAccountTomlData)
+  );
 })();
 
 async function deployNexusInstance() {
@@ -85,7 +93,13 @@ async function deployNexusInstance() {
   const nexusDeployment = slice(log?.topics[1]!, 12);
 
   console.log(
-    `Nexus instance deployed at ${nexusDeployment}. TxHash: ${receipt.transactionHash}`
+    `Nexus instance deployed at ${hyperlink(
+      nexusDeployment,
+      `https://sepolia.basescan.org/address/${nexusDeployment}`
+    )}.\n\tTx Hash: ${hyperlink(
+      receipt.transactionHash,
+      `https://sepolia.basescan.org/tx/${receipt.transactionHash}`
+    )}`
   );
 
   const sendTxHash = await walletClientBaseSepolia.sendTransaction({
@@ -96,7 +110,10 @@ async function deployNexusInstance() {
     hash: sendTxHash,
   });
   console.log(
-    `Sent ether to smart account. TxHash: ${sendReceipt.transactionHash}`
+    `Sent ether to smart account (for userOp execution).\n\tTx Hash: ${hyperlink(
+      sendReceipt.transactionHash,
+      `https://sepolia.basescan.org/tx/${sendReceipt.transactionHash}`
+    )}`
   );
 
   return nexusDeployment;
@@ -152,5 +169,10 @@ async function installKeystoreValidator(
   await publicClientBaseSepolia.waitForTransactionReceipt({
     hash: bundleTxHash,
   });
-  console.log(`Keystore validator installed. TxHash: ${bundleTxHash}`);
+  console.log(
+    `Keystore validator installed.\n\tTx Hash: ${hyperlink(
+      bundleTxHash,
+      `https://sepolia.basescan.org/tx/${bundleTxHash}`
+    )}`
+  );
 }
