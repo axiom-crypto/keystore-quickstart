@@ -225,7 +225,7 @@ const MAX_RETRIES = 20;
                 `Success: keystore block ${receipt?.blockNumber!} containing update transaction was finalized on L1!`
               )}\n\nCheck the previous state of the keystore account using:\ncast rpc keystore_getStateAt ${keystoreAddress} ${
                 receipt?.blockNumber! - 1n
-              } --rpc-url http://keystore-rpc-node.axiom.xyz | jq\n\nVerify the transaction updated the keystore account state using:\ncast rpc keystore_getStateAt ${keystoreAddress} "latest" --rpc-url http://keystore-rpc-node.axiom.xyz | jq`
+              } --rpc-url https://keystore-rpc-node.axiom.xyz | jq\n\nVerify the transaction updated the keystore account state using:\ncast rpc keystore_getStateAt ${keystoreAddress} "latest" --rpc-url https://keystore-rpc-node.axiom.xyz | jq`
             );
             return;
           case TransactionStatus.L2FinalizedL1Finalized:
