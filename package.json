@@ -2,14 +2,13 @@
   "name": "keystore-quickstart",
   "type": "module",
   "scripts": {
-    "start": "tsx src/01_setup.ts && tsx src/02_update.ts && tsx src/02a_sync.ts",
+    "start": "tsx src/01_setup.ts && tsx src/test/sendTestUserOp.ts && tsx src/02_update.ts && tsx src/02a_sync.ts",
     "start:setup": "tsx src/01_setup.ts",
-    "start:testUserOp": "tsx src/test/sendTestUserOp.ts"
+    "start:testUserOp": "tsx src/test/sendTestUserOp.ts",
     "start:update": "tsx src/02_update.ts",
     "start:sync": "tsx src/02a_sync.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "tsx": "^4.19.3"
   },
   "peerDependencies": {
