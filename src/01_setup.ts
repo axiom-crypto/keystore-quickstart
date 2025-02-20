@@ -20,12 +20,14 @@ import {
   keystoreValidatorModule,
   publicClientBaseSepolia,
   signer,
+  signers,
+  threshold,
   vkeyHash,
   walletClientBaseSepolia,
 } from "./_setup.ts";
 import { stringify } from "@iarna/toml";
 import { writeFileSync } from "fs";
-import { hyperlink } from "./utils.ts";
+import { hyperlink, yellow } from "./utils.ts";
 
 // Deploy Nexus instance
 // Counterfactually initialize a keystore account
@@ -37,7 +39,9 @@ import { hyperlink } from "./utils.ts";
   const keystoreAddress = keccak256(concat([salt, dataHash, vkeyHash]));
 
   console.log(
-    `Counterfactually initializing keystore account...\n\tSalt: ${salt}\n\tData Hash: ${dataHash}\n\tVkey Hash: ${vkeyHash}\n\tKeystore Address: ${keystoreAddress}`
+    `Counterfactually initializing keystore account...\n\t${yellow(
+      `${threshold}-of-${signers.length} Multisig`
+    )}\n\tSigners List: ${signers}\n\n\tSalt: ${salt}\n\tData Hash: ${dataHash}\n\tVkey Hash: ${vkeyHash}\n\tKeystore Address: ${keystoreAddress}`
   );
   console.log();
 
