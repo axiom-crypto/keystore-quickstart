@@ -145,11 +145,8 @@ const MAX_RETRIES = 20;
       sponsoredAuthInputs
     );
 
-  console.log(`${yellow("\tRequest hash: ")} ${requestHash}`);
-  console.log();
-  console.log(
-    "Waiting for sponsor authentication to complete. This typically takes ~6 minutes...\n\t(with the recent OpenVM v1.0.0-rc.1 release, this will also be ~30% shorter)"
-  );
+  console.log(`${yellow("\tRequest hash: ")} ${requestHash}\n`);
+  console.log("Waiting for sponsor authentication to complete. This typically takes ~4 minutes...");
 
   // Write the transaction request to a file for debugging purposes
   try {
