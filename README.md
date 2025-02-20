@@ -51,17 +51,16 @@ In the `.env` file, the variables are:
 
 Fill out the `src/_setup.toml` file with the desired parameters. Functional defaults are provided.
 
-Install `bun` and foundry
+Install foundry
 
 ```bash
-curl -fsSL https://bun.sh/install | bash
 curl -L https://foundry.paradigm.xyz | bash
 ```
 
 Install dependencies
 
 ```bash
-bun install
+npx tsx install
 ```
 
 > [!NOTE]
@@ -72,7 +71,7 @@ bun install
 Then, you can run the setup script with
 
 ```bash
-bun run src/01_setup.ts
+npx tsx src/01_setup.ts
 ```
 
 This script will:
@@ -106,7 +105,7 @@ keystoreAddress = "0xa6bb3accb4dd6c5dd3b05f1b684de4b1423af0180d5e5335170438fd5d8
 Run the script with
 
 ```bash
-bun run src/test/sendTestUserOp.ts
+npx tsx src/test/sendTestUserOp.ts
 ```
 
 This script will build the `userOp` to be executed which will include constructing the IMT proof of the state at the `keystoreAddress` relevant to the smart account. To read more about the IMT proof construction, see the [Transacting on L2s docs](https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/transaction#modifying-the-useroperation-signature).
@@ -141,7 +140,7 @@ This script will run through the entire process of making an update on the keyst
 Run the script with
 
 ```bash
-bun run src/02_update.ts
+npx tsx src/02_update.ts
 ```
 
 You can verify the update by querying the keystore account's state.
@@ -155,7 +154,7 @@ If you immediately try sending another bundle with the `sendBundle.ts` script, y
 Since this is the first update for the `keystoreAddress`, you can verify the update was propagated by checking that `userOp`s are no longer using a counterfactual keystore account.
 
 ```bash
-bun run src/test/sendTestUserOp.ts
+npx tsx src/test/sendTestUserOp.ts
 ```
 
 If it was in fact propagated, you should see something like:
@@ -183,7 +182,7 @@ State propagation to L2 is performed by taking a keystore state root finalized o
 However, in the case that this is not fast enough, you can manually execute this Merkle Trie proof with the optional `02a_sync.ts` script.
 
 ```bash
-bun run src/02a_sync.ts
+npx tsx src/02a_sync.ts
 ```
 
 This script will construct a storage proof of the keystore state root and execute it on the Keystore Validator.

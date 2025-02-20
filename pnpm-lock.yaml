@@ -9,11 +9,14 @@ importers:
   .:
     dependencies:
       '@axiom-crypto/keystore-sdk':
-        specifier: ^0.1.0-rc.1
-        version: 0.1.0-rc.1(@types/node@22.13.4)(typescript@5.7.3)
+        specifier: ^0.1.0-rc.2
+        version: 0.1.0-rc.2(@types/node@22.13.4)(typescript@5.7.3)
       '@iarna/toml':
         specifier: ^2.2.5
         version: 2.2.5
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.4.7
       typescript:
         specifier: ^5.0.0
         version: 5.7.3
@@ -30,8 +33,8 @@ packages:
   '@adraffy/ens-normalize@1.11.0':
     resolution: {integrity: sha512-/3DDPKHqqIqxUULp8yP4zODUY1i+2xvVWsv8A79xGWdCAG+8sb0hRh0Rk2QyOJUnnbyPUAZYcpBuRe3nS2OIUg==}
 
-  '@axiom-crypto/keystore-sdk@0.1.0-rc.1':
-    resolution: {integrity: sha512-wkeJLRcMv1kSZb1w/v7zwTXCLkDUGpnLc3yc+7NipZ+i51rTlUoKhsgPV3TJHoMTU1084/2N+3tEOFMEVE2hGA==}
+  '@axiom-crypto/keystore-sdk@0.1.0-rc.2':
+    resolution: {integrity: sha512-qnJiV6qhQ8MN29SYQ1amcD48DleMERdWb2vrthSAwEDuUC5uULEykCcE0PTkxSicJpZE0U+vwCI20IQ/tvYEsg==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -252,7 +255,7 @@ snapshots:
 
   '@adraffy/ens-normalize@1.11.0': {}
 
-  '@axiom-crypto/keystore-sdk@0.1.0-rc.1(@types/node@22.13.4)(typescript@5.7.3)':
+  '@axiom-crypto/keystore-sdk@0.1.0-rc.2(@types/node@22.13.4)(typescript@5.7.3)':
     dependencies:
       '@ethereumjs/rlp': 5.0.2
       '@noble/hashes': 1.7.1

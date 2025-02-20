@@ -16,9 +16,12 @@ import {
 } from "@axiom-crypto/keystore-sdk";
 import { readFileSync } from "fs";
 import { parse } from "@iarna/toml";
+import dotenv from "dotenv";
 
 import { abi as EntryPointAbi } from "../abis/EntryPoint.json";
 import { abi as KeystoreValidatorModuleAbi } from "../abis/KeystoreValidatorModule.json";
+
+dotenv.config();
 
 const setup = parse(readFileSync("src/_setup.toml", "utf-8"));
 
