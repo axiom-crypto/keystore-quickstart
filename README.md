@@ -1,6 +1,6 @@
 # Keystore Quickstart
 
-This repository houses a series of scripts to help you explore and understand the Keystore as quickly as possible. 
+This repository houses a series of scripts to help you explore and understand the Keystore as quickly as possible.
 
 - [Overview](#overview)
 - [Running the Scripts](#running-the-scripts)
@@ -30,7 +30,7 @@ In the following sections, we will walk through the scripts in detail. At variou
 
 ## Running the Scripts
 
-### Setup 
+### Setup
 
 Configure the environment variables in the `.env` file.
 
@@ -60,7 +60,7 @@ curl -L https://foundry.paradigm.xyz | bash
 Install dependencies
 
 ```bash
-npx tsx install
+npm install
 ```
 
 > [!NOTE]
