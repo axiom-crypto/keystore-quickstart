@@ -32,6 +32,12 @@ In the following sections, we will walk through the scripts in detail. At variou
 
 ### Setup
 
+Clone the repository.
+
+```bash
+git clone https://github.com/axiom-crypto/keystore-quickstart.git
+```
+
 Configure the environment variables in the `.env` file.
 
 ```bash

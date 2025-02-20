@@ -69,7 +69,7 @@ async function sendTestUserOp() {
     [packedUserOp],
     signer.address,
   ])) as `0x${string}`;
-  const receipt = await publicClientBaseSepolia.waitForTransactionReceipt({
+  await publicClientBaseSepolia.waitForTransactionReceipt({
     confirmations: 1,
     hash: bundleTxHash,
   });
@@ -127,6 +127,11 @@ async function constructUserOp(
     userOpSignature,
     salt,
     keystoreAddress
+  );
+
+  console.log();
+  console.log(
+    `${yellow(`Signing userOp with private key of ${account1.address}...`)}`
   );
 
   return { packedUserOp, userOpHash };
