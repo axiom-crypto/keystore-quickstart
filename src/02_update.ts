@@ -145,7 +145,7 @@ const MAX_RETRIES = 20;
       sponsoredAuthInputs
     );
 
-  console.log(`${yellow("\tRequest hash: ")} ${requestHash}\n`);
+  console.log(`${yellow("\tRequest hash: ")} ${requestHash}\n`); 
   console.log("Waiting for sponsor authentication to complete. This typically takes ~4 minutes...");
 
   // Write the transaction request to a file for debugging purposes
