@@ -20,10 +20,11 @@ import {
   BlockTag,
   encodeMOfNData,
   KeystoreAccountBuilder,
+  makeMOfNEcdsaAuthInputs,
   TransactionStatus,
   UpdateTransactionBuilder,
   type AccountState,
-  type SponsorAuthInputs,
+  type SponsoredAuthInputs,
   type UpdateTransactionRequest,
 } from "@axiom-crypto/keystore-sdk";
 import { concat, decodeAbiParameters, encodeAbiParameters } from "viem";
@@ -92,12 +93,14 @@ const MAX_RETRIES = 20;
   const updateTx = UpdateTransactionBuilder.fromTransactionRequest(txReq);
   const userSig = await updateTx.sign(privKey1);
 
-  const sponsorAuthInputs: SponsorAuthInputs = {
-    sponsorAuth: AXIOM_ACCOUNT_AUTH_INPUTS,
-    userAuth: {
-      codeHash: consumerCodehash,
-      signatures: [userSig],
-      eoaAddrs,
+  const sponsoredAuthInputs: SponsoredAuthInputs = {
+    proveSponsored: {
+      sponsorAuthInputs: AXIOM_ACCOUNT_AUTH_INPUTS,
+      userAuthInputs: makeMOfNEcdsaAuthInputs(
+        consumerCodehash,
+        [userSig],
+        eoaAddrs,
+      ),
     },
   };
 
@@ -137,16 +140,13 @@ const MAX_RETRIES = 20;
   );
 
   const requestHash =
-    await signatureProverProvider.sponsorAuthenticateTransaction(
+    await signatureProverProvider.authenticateSponsoredTransaction(
       updateTx.txBytes(),
-      sponsorAuthInputs
+      sponsoredAuthInputs
     );
 
-  console.log(`${yellow("\tRequest hash: ")} ${requestHash}`);
-  console.log();
-  console.log(
-    "Waiting for sponsor authentication to complete. This typically takes ~6 minutes...\n\t(with the recent OpenVM v1.0.0-rc.1 release, this will also be ~30% shorter)"
-  );
+  console.log(`${yellow("\tRequest hash: ")} ${requestHash}\n`);
+  console.log("Waiting for sponsor authentication to complete. This typically takes ~4 minutes...");
 
   // Write the transaction request to a file for debugging purposes
   try {
@@ -166,7 +166,7 @@ const MAX_RETRIES = 20;
   const authenticatedTx = await (async () => {
     while (true) {
       const status =
-        await signatureProverProvider.getSponsorAuthenticationStatus(
+        await signatureProverProvider.getSponsoredAuthenticationStatus(
           requestHash
         );
       console.log(`\tTime elapsed: ${(i++ * RETRY_INTERVAL_SEC) / 60} minutes`);
