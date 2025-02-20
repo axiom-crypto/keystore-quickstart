@@ -8,7 +8,7 @@ consumerCodehash = "0xa1b20564cd6cc6410266a716c9654406a15e822d4dc89c4127288da925
 # https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/overview#expiry-checks.
 #
 # The value is measured in seconds.
-invalidationTime = 6000
+invalidationTime = 7200
 
 # Signing threshold for an action. Essentially, the `m` in an `m-of-n` scheme.
 threshold = 1
