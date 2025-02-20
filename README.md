@@ -57,10 +57,11 @@ In the `.env` file, the variables are:
 
 Fill out the `src/_setup.toml` file with the desired parameters. Functional defaults are provided.
 
-Install foundry
+Install Foundry and jq (used later to format JSON nicely):
 
 ```bash
 curl -L https://foundry.paradigm.xyz | bash
+sudo apt install jq
 ```
 
 Install dependencies
@@ -152,6 +153,7 @@ npx tsx src/02_update.ts
 You can verify the update by querying the keystore account's state.
 
 ```bash
+source .env
 cast rpc keystore_getStateAt <keystoreAddress> "latest" --rpc-url $KEYSTORE_RPC_URL | jq
 ```
 
