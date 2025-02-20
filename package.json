@@ -1,9 +1,15 @@
 {
   "name": "keystore-quickstart",
-  "module": "index.ts",
   "type": "module",
+  "scripts": {
+    "start": "tsx src/01_setup.ts && tsx src/02_update.ts && tsx src/02a_sync.ts",
+    "start:setup": "tsx src/01_setup.ts",
+    "start:update": "tsx src/02_update.ts",
+    "start:sync": "tsx src/02a_sync.ts"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "tsx": "^4.19.3"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
