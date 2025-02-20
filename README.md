@@ -61,7 +61,7 @@ Install Foundry and jq (used later to format JSON nicely):
 
 ```bash
 curl -L https://foundry.paradigm.xyz | bash
-sudo apt install jq
+sudo apt install jq                            # or `brew install jq` if on macOS
 ```
 
 Install dependencies
