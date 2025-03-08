@@ -6,7 +6,7 @@ import {
   publicClientSepolia,
 } from "./_setup";
 import { abi as L1BlockAbi } from "../abis/L1Block.json";
-import { keccak256, toHex, toRlp } from "viem";
+import { keccak256, pad, toHex, toRlp } from "viem";
 import { hyperlink } from "./utils";
 
 (async () => {
@@ -36,10 +36,12 @@ import { hyperlink } from "./utils";
     blockNumber: blockNumber,
   });
 
+  const blockhash = keccak256(rlpBlockHeader);
+
   const cacheStateRootTx =
     await keystoreValidatorModule.write.cacheKeystoreStateRoot([
       {
-        storageValue: `0x${proof.storageProof[0].value.toString(16)}`,
+        storageValue: pad(`0x${proof.storageProof[0].value.toString(16)}`),
         blockHeader: rlpBlockHeader,
         accountProof: proof.accountProof,
         storageProof: proof.storageProof[0].proof,
@@ -50,8 +52,6 @@ import { hyperlink } from "./utils";
     confirmations: 1,
     hash: cacheStateRootTx,
   });
-
-  const blockhash = keccak256(rlpBlockHeader);
 
   console.log(
     `Keystore state root cached.\n\tNumber of L1 Blockhash: ${hyperlink(
@@ -93,6 +93,8 @@ async function _getRLPBlockHeader(l1BlockNumber: bigint) {
     toHex(blockHeader.blobGasUsed!),
     toHex(blockHeader.excessBlobGas!),
     blockHeader.parentBeaconBlockRoot!,
+    // @ts-expect-error
+    blockHeader.requestsHash,
   ]
     .filter((x) => x) // remove undefined items
     .map((x) => {
