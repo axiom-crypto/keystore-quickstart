@@ -149,16 +149,16 @@ async function constructKeystoreUserOpSignature(
     (await keystoreValidatorModule.read.latestStateRoot()) as `0x${string}`;
 
   // Get the block number of the latest cached state root
-  const latestCachedBlockNumber = await nodeProvider.getBlockNumberByStateRoot(
-    latestCachedStateRoot
-  );
+  const latestCachedBlockNumber = await nodeProvider.getBlockNumberByStateRoot({
+    stateRoot: latestCachedStateRoot,
+  });
 
   // Get the IMT proof for the keystore address **against the state root
   // available in the Keystore Validator**
-  const imtProof = await nodeProvider.getProof(
-    keystoreAddress,
-    latestCachedBlockNumber
-  );
+  const imtProof = await nodeProvider.getProof({
+    address: keystoreAddress,
+    block: latestCachedBlockNumber,
+  });
 
   // As an optimization, the Keystore Validator takes the isLeft sister node
   // flags as a bit-packed word. Below, we construct this word.
