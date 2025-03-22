@@ -13,22 +13,25 @@ import {
 } from "./_setup";
 import {
   AuthenticationStatusEnum,
-  AXIOM_ACCOUNT,
-  AXIOM_ACCOUNT_AUTH_INPUTS,
-  AXIOM_CODEHASH,
-  AXIOM_EOA,
   BlockTag,
-  encodeMOfNData,
-  KeystoreAccountBuilder,
-  makeMOfNEcdsaAuthInputs,
+  createUpdateTransactionClient,
+  initAccountCounterfactual,
+  initAccountFromAddress,
   TransactionStatus,
-  UpdateTransactionBuilder,
   type AccountState,
   type SponsoredAuthInputs,
   type UpdateTransactionRequest,
 } from "@axiom-crypto/keystore-sdk";
 import { concat, decodeAbiParameters, encodeAbiParameters } from "viem";
 import { green, sleep, yellow } from "./utils";
+
+const AXIOM_SPONSOR_CODEHASH =
+  "0xa1b20564cd6cc6410266a716c9654406a15e822d4dc89c4127288da925d5c225";
+const AXIOM_SPONSOR_DATA_HASH =
+  "0xecf85bc51a8b47c545dad1a47e868276d0a92b7cf2716033ce77d385a6b67c4b";
+const AXIOM_SPONSOR_KEYSTORE_ADDR =
+  "0xb5ce21832ca3bbf53de610c6dda13d6a735b0a8ea3422aeaab678a01e298269d";
+const AXIOM_SPONSOR_EOA = "0xD7548a3ED8c51FA30D26ff2D7Db5C33d27fd48f2";
 
 const RETRY_INTERVAL_SEC = 30;
 const MAX_RETRIES = 20;
@@ -39,24 +42,27 @@ const MAX_RETRIES = 20;
 
   const keystoreAddress = config.keystoreAddress as `0x${string}`;
   const nonce = BigInt(
-    await nodeProvider.getTransactionCount(keystoreAddress, BlockTag.Latest)
+    await nodeProvider.getTransactionCount({
+      address: keystoreAddress,
+      block: BlockTag.Latest,
+    })
   );
 
   // Initialize KeystoreAccount object based on whether the account is counterfactual or not.
   let keystoreAccount;
   let eoaAddrs: `0x${string}`[];
   if (nonce === 0n) {
-    keystoreAccount = KeystoreAccountBuilder.initCounterfactual(
-      config.salt as `0x${string}`,
+    keystoreAccount = initAccountCounterfactual({
+      salt: config.salt as `0x${string}`,
       dataHash,
-      vkey
-    );
+      vkey,
+    });
     eoaAddrs = signers;
   } else {
-    const state: AccountState = await nodeProvider.getStateAt(
-      keystoreAddress,
-      BlockTag.Latest
-    );
+    const state: AccountState = await nodeProvider.getStateAt({
+      address: keystoreAddress,
+      block: BlockTag.Latest,
+    });
 
     const [, , addrs] = decodeAbiParameters(
       [
@@ -70,38 +76,45 @@ const MAX_RETRIES = 20;
     // @ts-expect-error
     eoaAddrs = addrs;
 
-    keystoreAccount = KeystoreAccountBuilder.initWithKeystoreAddress(
-      keystoreAddress,
-      state.dataHash,
-      vkey
-    );
+    keystoreAccount = initAccountFromAddress({
+      address: keystoreAddress,
+      dataHash: state.dataHash,
+      vkey,
+    });
   }
 
   // Fetch how much the sequencer is charging for `feePerGas`
   const feePerGas = await sequencerProvider.gasPrice();
 
-  const newUserData = constructNewUserData();
-  const txReq: UpdateTransactionRequest = {
-    nonce: nonce,
-    feePerGas,
-    newUserData,
-    newUserVkey: vkey, // We won't alter the vkey
-    userAcct: keystoreAccount,
-    sponsorAcct: AXIOM_ACCOUNT,
-  };
+  const sponsorAcct = initAccountFromAddress({
+    address: AXIOM_SPONSOR_KEYSTORE_ADDR,
+    dataHash: AXIOM_SPONSOR_DATA_HASH,
+    vkey,
+    nodeClient: nodeProvider,
+  });
 
-  const updateTx = UpdateTransactionBuilder.fromTransactionRequest(txReq);
+  const newUserData = constructNewUserData();
+  const updateTx = await createUpdateTransactionClient({
+    newUserData,
+    newUserVkey: vkey,
+    userAcct: keystoreAccount,
+    sponsorAcct,
+    feePerGas,
+  });
+
   const userSig = await updateTx.sign(privKey1);
 
-  const sponsoredAuthInputs: SponsoredAuthInputs = {
-    proveSponsored: {
-      sponsorAuthInputs: AXIOM_ACCOUNT_AUTH_INPUTS,
-      userAuthInputs: makeMOfNEcdsaAuthInputs(
-        consumerCodehash,
-        [userSig],
-        eoaAddrs,
-      ),
-    },
+  const sponsoredAuthInputs = {
+    sponsorAuthInputs: signatureProverProvider.makeAuthInputs({
+      codehash: AXIOM_SPONSOR_CODEHASH,
+      signatures: [],
+      signersList: [AXIOM_SPONSOR_EOA],
+    }),
+    userAuthInputs: signatureProverProvider.makeAuthInputs({
+      codehash: consumerCodehash,
+      signatures: [userSig],
+      signersList: eoaAddrs,
+    }),
   };
 
   const keyData = concat([
@@ -123,9 +136,11 @@ const MAX_RETRIES = 20;
         { name: "threshold", type: "uint256" },
         { name: "eoaAddrs", type: "address[]" },
       ],
-      [AXIOM_CODEHASH, 0n, [AXIOM_EOA]]
+      [AXIOM_SPONSOR_CODEHASH, 0n, [AXIOM_SPONSOR_EOA]]
     ),
   ]);
+
+  console.log(sponsoredAuthInputs);
 
   console.log(
     `Sending request to generate ZK proof to signature prover RPC...\n\t${green(
@@ -140,19 +155,21 @@ const MAX_RETRIES = 20;
   );
 
   const requestHash =
-    await signatureProverProvider.authenticateSponsoredTransaction(
-      updateTx.txBytes(),
-      sponsoredAuthInputs
-    );
+    await signatureProverProvider.authenticateSponsoredTransaction({
+      transaction: updateTx.toBytes(),
+      sponsoredAuthInputs,
+    });
 
   console.log(`${yellow("\tRequest hash: ")} ${requestHash}\n`);
-  console.log("Waiting for sponsor authentication to complete. This typically takes ~4 minutes...");
+  console.log(
+    "Waiting for sponsor authentication to complete. This typically takes ~4 minutes..."
+  );
 
   // Write the transaction request to a file for debugging purposes
   try {
     mkdirSync("src/debug", { recursive: true });
     const txJson = JSON.stringify(
-      txReq,
+      updateTx.toTypedData(),
       (_, value) => (typeof value === "bigint" ? value.toString() : value),
       2
     );
@@ -166,9 +183,9 @@ const MAX_RETRIES = 20;
   const authenticatedTx = await (async () => {
     while (true) {
       const status =
-        await signatureProverProvider.getSponsoredAuthenticationStatus(
-          requestHash
-        );
+        await signatureProverProvider.getSponsoredAuthenticationStatus({
+          requestHash,
+        });
       console.log(`\tTime elapsed: ${(i++ * RETRY_INTERVAL_SEC) / 60} minutes`);
       switch (status.status) {
         case AuthenticationStatusEnum.Pending:
@@ -190,7 +207,9 @@ const MAX_RETRIES = 20;
 
   console.log();
   console.log("Sending transaction to keystore sequencer...");
-  const txHash = await sequencerProvider.sendRawTransaction(authenticatedTx);
+  const txHash = await sequencerProvider.sendRawTransaction({
+    data: authenticatedTx,
+  });
   console.log("\tKeystore Tx Hash:", txHash);
 
   console.log();
@@ -200,7 +219,9 @@ const MAX_RETRIES = 20;
   let currentStatus = "";
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
-      const receipt = await nodeProvider.getTransactionReceipt(txHash);
+      const receipt = await nodeProvider.getTransactionReceipt({
+        hash: txHash,
+      });
 
       if (currentStatus !== receipt?.status) {
         currentStatus = receipt?.status;
@@ -254,5 +275,9 @@ function constructNewUserData() {
 
   const newSignersList = [...signers, newAuthorizedAddress];
 
-  return encodeMOfNData(consumerCodehash, threshold, newSignersList);
+  return signatureProverProvider.keyDataEncoder({
+    codehash: consumerCodehash,
+    m: threshold,
+    signersList: newSignersList,
+  });
 }

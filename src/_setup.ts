@@ -9,10 +9,17 @@ import {
 import { baseSepolia, sepolia } from "viem/chains";
 import { privateKeyToAccount, privateKeyToAddress } from "viem/accounts";
 import {
-  encodeMOfNData,
-  KeystoreNodeProvider,
-  KeystoreSequencerProvider,
-  KeystoreSignatureProverProvider,
+  authDataEncoder,
+  createNodeClient,
+  createSequencerClient,
+  createSignatureProverClient,
+  keyDataEncoder,
+  M_OF_N_ECDSA_VKEY,
+  makeAuthInputs,
+  type CustomSignatureProver,
+  type MOfNEcdsaAuthDataFields,
+  type MOfNEcdsaAuthInputs,
+  type MOfNEcdsaKeyDataFields,
 } from "@axiom-crypto/keystore-sdk";
 import { readFileSync } from "fs";
 import { parse } from "@iarna/toml";
@@ -108,13 +115,25 @@ export const walletClientBaseSepolia = createWalletClient({
   account: signer,
 });
 
-export const nodeProvider = new KeystoreNodeProvider(keystoreNodeRpc);
-export const sequencerProvider = new KeystoreSequencerProvider(
-  keystoreSequencerRpc
-);
-export const signatureProverProvider = new KeystoreSignatureProverProvider(
-  keystoreSignatureProverRpc
-);
+export const nodeProvider = createNodeClient({ url: keystoreNodeRpc });
+export const sequencerProvider = createSequencerClient({
+  url: keystoreSequencerRpc,
+});
+
+export const MOfNSignatureProver: CustomSignatureProver<
+  MOfNEcdsaKeyDataFields,
+  MOfNEcdsaAuthDataFields,
+  MOfNEcdsaAuthInputs
+> = {
+  url: "https://keystore-rpc-signatureprover.axiom.xyz",
+  vkey: M_OF_N_ECDSA_VKEY,
+  keyDataEncoder,
+  authDataEncoder,
+  makeAuthInputs,
+};
+
+export const signatureProverProvider =
+  createSignatureProverClient(MOfNSignatureProver);
 
 // For self-bundling
 export const entryPoint = getContract({
@@ -137,7 +156,11 @@ export const threshold = BigInt(setup.threshold);
 export const signers = setup.signerPrivKeys.map((privKey: `0x${string}`) =>
   privateKeyToAddress(privKey)
 );
-export const data = encodeMOfNData(consumerCodehash, threshold, signers);
+export const data = signatureProverProvider.keyDataEncoder({
+  codehash: consumerCodehash,
+  m: threshold,
+  signersList: signers,
+});
 export const vkey = setup.vkey as `0x${string}`;
 export const dataHash = keccak256(data);
 export const vkeyHash = keccak256(vkey);
