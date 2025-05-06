@@ -15,7 +15,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@axiom-crypto/keystore-sdk": "0.2.1",
+    "@axiom-crypto/keystore-sdk": "0.2.3",
     "@iarna/toml": "^2.2.5",
     "dotenv": "^16.4.7",
     "viem": "^2.22.17"

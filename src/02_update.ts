@@ -19,8 +19,6 @@ import {
   initAccountFromAddress,
   TransactionStatus,
   type AccountState,
-  type SponsoredAuthInputs,
-  type UpdateTransactionRequest,
 } from "@axiom-crypto/keystore-sdk";
 import { concat, decodeAbiParameters, encodeAbiParameters } from "viem";
 import { green, sleep, yellow } from "./utils";
@@ -244,8 +242,7 @@ const MAX_RETRIES = 20;
             console.log(
               `\t${green(
                 `Success: keystore block ${receipt?.blockNumber!} containing update transaction was finalized on L1!`
-              )}\n\nCheck the previous state of the keystore account using:\ncast rpc keystore_getStateAt ${keystoreAddress} ${
-                receipt?.blockNumber! - 1n
+              )}\n\nCheck the previous state of the keystore account using:\ncast rpc keystore_getStateAt ${keystoreAddress} ${receipt?.blockNumber! - 1n
               } --rpc-url https://keystore-rpc-node.axiom.xyz | jq\n\nVerify the transaction updated the keystore account state using:\ncast rpc keystore_getStateAt ${keystoreAddress} "latest" --rpc-url https://keystore-rpc-node.axiom.xyz | jq`
             );
             return;
