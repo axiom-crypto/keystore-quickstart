@@ -1,6 +1,6 @@
 {
   "name": "keystore-quickstart",
-  "version": "0.1.0",
+  "version": "0.2.3",
   "type": "module",
   "scripts": {
     "start": "tsx src/01_setup.ts && tsx src/test/sendTestUserOp.ts && tsx src/02_update.ts && tsx src/02a_sync.ts",
