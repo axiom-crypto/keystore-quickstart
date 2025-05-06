@@ -1,7 +1,7 @@
 # The codehash for the key data consumer. Read more about key data consumers
 # here:
 # https://keystore-docs.axiom.xyz/docs/creating-a-keystore-account-type/key-data-consumer
-consumerCodehash = "0xa1b20564cd6cc6410266a716c9654406a15e822d4dc89c4127288da925d5c225"
+consumerCodehash = "0x0b2f6abb18102fa8a316ceda8a3f73b5eab33bb790d5bd92ff3995a9364adf97"
 
 # This is a parameter stored in the Keystore Validator to support expiry checks.
 # Read more about it here:
