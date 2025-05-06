@@ -14,6 +14,7 @@ import {
   createSequencerClient,
   createSignatureProverClient,
   keyDataEncoder,
+  M_OF_N_ECDSA_SIG_PROVER_URL,
   M_OF_N_ECDSA_VKEY,
   makeAuthInputs,
   type CustomSignatureProver,
@@ -125,7 +126,6 @@ export const MOfNSignatureProver: CustomSignatureProver<
   MOfNEcdsaAuthDataFields,
   MOfNEcdsaAuthInputs
 > = {
-  url: "https://keystore-rpc-signatureprover.axiom.xyz",
   vkey: M_OF_N_ECDSA_VKEY,
   keyDataEncoder,
   authDataEncoder,
@@ -133,7 +133,7 @@ export const MOfNSignatureProver: CustomSignatureProver<
 };
 
 export const signatureProverProvider =
-  createSignatureProverClient(MOfNSignatureProver);
+  createSignatureProverClient({ url: M_OF_N_ECDSA_SIG_PROVER_URL, ...MOfNSignatureProver });
 
 // For self-bundling
 export const entryPoint = getContract({
