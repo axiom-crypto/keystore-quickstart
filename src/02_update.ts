@@ -43,7 +43,7 @@ const MAX_RETRIES = 20;
     await nodeProvider.getTransactionCount({
       address: keystoreAddress,
       block: BlockTag.Latest,
-    })
+    }),
   );
 
   // Initialize KeystoreAccount object based on whether the account is counterfactual or not.
@@ -68,7 +68,7 @@ const MAX_RETRIES = 20;
         { name: "threshold", type: "uint256" },
         { name: "eoaAddrs", type: "address[]" },
       ],
-      ("0x" + state.data.slice(4)) as `0x${string}`
+      ("0x" + state.data.slice(4)) as `0x${string}`,
     );
 
     // @ts-expect-error
@@ -123,7 +123,7 @@ const MAX_RETRIES = 20;
         { name: "threshold", type: "uint256" },
         { name: "eoaAddrs", type: "address[]" },
       ],
-      [consumerCodehash, threshold, eoaAddrs]
+      [consumerCodehash, threshold, eoaAddrs],
     ),
   ]);
   const sponsorKeyData = concat([
@@ -134,7 +134,7 @@ const MAX_RETRIES = 20;
         { name: "threshold", type: "uint256" },
         { name: "eoaAddrs", type: "address[]" },
       ],
-      [AXIOM_SPONSOR_CODEHASH, 0n, [AXIOM_SPONSOR_EOA]]
+      [AXIOM_SPONSOR_CODEHASH, 0n, [AXIOM_SPONSOR_EOA]],
     ),
   ]);
 
@@ -142,14 +142,14 @@ const MAX_RETRIES = 20;
 
   console.log(
     `Sending request to generate ZK proof to signature prover RPC...\n\t${green(
-      "User Key Data (from keystore)"
+      "User Key Data (from keystore)",
     )}: ${keyData}\n\t${green(
-      "User Auth Data (signatures)"
+      "User Auth Data (signatures)",
     )}: [${userSig}]\n\t${green(
-      "Sponsor Key Data (from keystore)"
+      "Sponsor Key Data (from keystore)",
     )}: ${sponsorKeyData}\n\t${green(
-      "Sponsor Auth Data (for private devnet, the sponsor account is chosen to require no authentication)"
-    )}: []`
+      "Sponsor Auth Data (for private devnet, the sponsor account is chosen to require no authentication)",
+    )}: []`,
   );
 
   const requestHash =
@@ -160,7 +160,7 @@ const MAX_RETRIES = 20;
 
   console.log(`${yellow("\tRequest hash: ")} ${requestHash}\n`);
   console.log(
-    "Waiting for sponsor authentication to complete. This typically takes ~4 minutes..."
+    "Waiting for sponsor authentication to complete. This typically takes ~4 minutes...",
   );
 
   // Write the transaction request to a file for debugging purposes
@@ -169,7 +169,7 @@ const MAX_RETRIES = 20;
     const txJson = JSON.stringify(
       updateTx.toTypedData(),
       (_, value) => (typeof value === "bigint" ? value.toString() : value),
-      2
+      2,
     );
     writeFileSync(`src/debug/${requestHash}.json`, txJson);
   } catch (err) {
@@ -234,25 +234,24 @@ const MAX_RETRIES = 20;
           case TransactionStatus.L2IncludedL1Included:
             console.log(
               `${yellow(
-                "\tStatus: transaction included in block and committed to L1"
-              )}`
+                "\tStatus: transaction included in block and committed to L1",
+              )}`,
             );
             break;
+          case TransactionStatus.L2FinalizedL1Finalized:
           case TransactionStatus.L2FinalizedL1Included:
             console.log(
               `\t${green(
-                `Success: keystore block ${receipt?.blockNumber!} containing update transaction was finalized on L1!`
-              )}\n\nCheck the previous state of the keystore account using:\ncast rpc keystore_getStateAt ${keystoreAddress} ${receipt?.blockNumber! - 1n
-              } --rpc-url https://keystore-rpc-node.axiom.xyz | jq\n\nVerify the transaction updated the keystore account state using:\ncast rpc keystore_getStateAt ${keystoreAddress} "latest" --rpc-url https://keystore-rpc-node.axiom.xyz | jq`
+                `Success: keystore block ${receipt?.blockNumber!} containing update transaction was finalized on L1!`,
+              )}\n\nCheck the previous state of the keystore account using:\n\tcast rpc keystore_getStateAt ${keystoreAddress} ${
+                receipt?.blockNumber! - 1n
+              } --rpc-url https://keystore-rpc-node.axiom.xyz | jq\n\nVerify the transaction updated the keystore account state using:\n\tcast rpc keystore_getStateAt ${keystoreAddress} "latest" --rpc-url https://keystore-rpc-node.axiom.xyz | jq`,
             );
             return;
-          case TransactionStatus.L2FinalizedL1Finalized:
-            // Re-org safe status is currently not implemented
-            break;
         }
       } else {
         console.log(
-          `\tChecking transaction status again in ${RETRY_INTERVAL_SEC} seconds`
+          `\tChecking transaction status again in ${RETRY_INTERVAL_SEC} seconds`,
         );
       }
     } catch (err) {
