@@ -35,8 +35,8 @@ const MAX_RETRIES = 20;
   });
 
   console.log("Deposit Transaction:");
-  console.log(`\tkeystoreAddress:${keystoreAddress}`);
-  console.log(`\tamount: 0.005 ETH`);
+  console.log(`\tKeystore Address: ${keystoreAddress}`);
+  console.log(`\tAmount: 0.005 ETH`);
 
   // Send the deposit transaction to L1
   const depositL1TxHash = await l1Client.initiateL1Transaction({
