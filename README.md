@@ -213,12 +213,6 @@ Run the script with:
 npx tsx src/03_deposit.ts
 ```
 
-You can verify the deposit by checking the keystore account balance:
-
-```bash
-cast rpc keystore_getBalance <keystoreAddress> "latest" --rpc-url https://keystore-rpc-node.axiom.xyz | jq
-```
-
 ### `04_withdraw.ts`
 
 This script shows how to withdraw ETH from your keystore account. It will:
