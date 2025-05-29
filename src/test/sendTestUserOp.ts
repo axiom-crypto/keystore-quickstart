@@ -9,6 +9,7 @@ import {
   signer,
   stateOracle,
   vkeyHash,
+  keyDataConsumer,
 } from "../_setup";
 import { readFileSync } from "fs";
 import { parse } from "@iarna/toml";
@@ -54,7 +55,7 @@ async function sendTestUserOp() {
   const l2TomlContent = readFileSync("src/_accountL2.toml", "utf-8");
   const keystoreTomlContent = readFileSync(
     "src/_accountKeystore.toml",
-    "utf-8"
+    "utf-8",
   );
   const l2Config = parse(l2TomlContent);
   const keystoreConfig = parse(keystoreTomlContent);
@@ -62,7 +63,7 @@ async function sendTestUserOp() {
     l2Config.nexusDeployment as `0x${string}`,
     keystoreConfig.salt as `0x${string}`,
     keystoreConfig.keystoreAddress as `0x${string}`,
-    constructCalldata()
+    constructCalldata(),
   );
 
   const bundleTxHash = (await entryPoint.write.handleOps([
@@ -78,16 +79,16 @@ async function sendTestUserOp() {
   console.log(
     `Sent ${value} wei from smart account ${hyperlink(
       packedUserOp.sender,
-      `https://sepolia.basescan.org/address/${packedUserOp.sender}`
+      `https://sepolia.basescan.org/address/${packedUserOp.sender}`,
     )} to address ${transferTarget} on Base Sepolia using authentication from keystore account ${
       keystoreConfig.keystoreAddress
     }\n\tBundle Tx Hash: ${hyperlink(
       bundleTxHash,
-      `https://sepolia.basescan.org/tx/${bundleTxHash}`
+      `https://sepolia.basescan.org/tx/${bundleTxHash}`,
     )}\n\tUserOp Hash: ${hyperlink(
       userOpHash,
-      `https://sepolia.basescan.org/tx/${userOpHash}`
-    )}`
+      `https://sepolia.basescan.org/tx/${userOpHash}`,
+    )}`,
   );
 }
 
@@ -95,7 +96,7 @@ async function constructUserOp(
   smartAccountAddress: `0x${string}`,
   salt: `0x${string}`,
   keystoreAddress: `0x${string}`,
-  userOpCalldata: `0x${string}`
+  userOpCalldata: `0x${string}`,
 ) {
   // Standard userOp construction
   const nextNonce = (await entryPoint.read.getNonce([
@@ -126,12 +127,12 @@ async function constructUserOp(
   packedUserOp.signature = await constructKeystoreUserOpSignature(
     userOpSignature,
     salt,
-    keystoreAddress
+    keystoreAddress,
   );
 
   console.log();
   console.log(
-    `${yellow(`Signing userOp with private key of ${account1.address}...`)}`
+    `${yellow(`Signing userOp with private key of ${account1.address}...`)}`,
   );
 
   return { packedUserOp, userOpHash };
@@ -141,7 +142,7 @@ async function constructUserOp(
 async function constructKeystoreUserOpSignature(
   authData: `0x${string}`,
   salt: `0x${string}`,
-  keystoreAddress: `0x${string}`
+  keystoreAddress: `0x${string}`,
 ) {
   // Get the latest state root that has been cached from the state oracle
   const latestCachedStateRoot: `0x${string}` =
@@ -178,26 +179,26 @@ async function constructKeystoreUserOpSignature(
 
     console.log(
       `Keystore account ${keystoreAddress} is ${yellow(
-        bold("counterfactual")
+        bold("counterfactual"),
       )}.\n\tData Hash: ${keccak256(
-        data
-      )}\n\tVkey Hash: ${vkeyHash}\n\tSalt (only necessary for counterfactual accounts): ${salt}`
+        data,
+      )}\n\tVkey Hash: ${vkeyHash}\n\tSalt (only necessary for counterfactual accounts): ${salt}`,
     );
   } else {
     keyData = imtProof.state.data;
 
     console.log(
       `Keystore account ${keystoreAddress} is ${yellow(
-        bold("initialized")
+        bold("initialized"),
       )}.\n\tData Hash: ${keccak256(
-        data
+        data,
       )}\n\tVkey Hash: ${vkeyHash}\n\tSalt (always bytes32(0) for initialized accounts): ${pad(
-        "0x00"
-      )}`
+        "0x00",
+      )}`,
     );
   }
 
-  const signature = encodeAbiParameters(
+  const keyDataProof = encodeAbiParameters(
     [
       {
         type: "tuple",
@@ -237,7 +238,6 @@ async function constructKeystoreUserOpSignature(
           },
         ],
       },
-      { type: "bytes", name: "signatures" },
     ],
     [
       {
@@ -250,8 +250,16 @@ async function constructKeystoreUserOpSignature(
         proof: imtProof.proof.siblings.map((sibling) => sibling.hash),
         isLeft,
       },
-      authData,
-    ]
+    ],
+  );
+
+  const signature = encodeAbiParameters(
+    [
+      { type: "bytes", name: "keyDataProof" },
+      { type: "address", name: "keyDataConsumer" },
+      { type: "bytes", name: "authData" },
+    ],
+    [keyDataProof, keyDataConsumer, authData],
   );
 
   return signature;

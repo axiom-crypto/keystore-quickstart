@@ -8,7 +8,11 @@ consumerCodehash = "0x0b2f6abb18102fa8a316ceda8a3f73b5eab33bb790d5bd92ff3995a936
 # https://keystore-docs.axiom.xyz/docs/using-keystore-accounts/overview#expiry-checks.
 #
 # The value is measured in seconds.
-invalidationTime = 7200
+stateRootInvalidationTime = 7200
+# The value is measured in seconds.
+cacheInvalidationTime = 86400
+
+keyDataConsumer = "0xD17D81633c2576506eCA41d715CD030286290649"
 
 # Signing threshold for an action. Essentially, the `m` in an `m-of-n` scheme.
 threshold = 1

@@ -42,9 +42,14 @@ import { BlockTransactionsKind } from "@axiom-crypto/keystore-sdk";
 
   let outputRoot = pad(`0x${proof.storageProof[0].value.toString(16)}`);
   // Get output root preimage
-  let outputRootBlockNumber = await nodeProvider.getBlockNumberByOutputRoot({outputRoot: outputRoot});
-  let block = await nodeProvider.getBlockByNumber({block: outputRootBlockNumber, txKind: BlockTransactionsKind.Hashes});
- 
+  let outputRootBlockNumber = await nodeProvider.getBlockNumberByOutputRoot({
+    outputRoot: outputRoot,
+  });
+  let block = await nodeProvider.getBlockByNumber({
+    block: outputRootBlockNumber,
+    txKind: BlockTransactionsKind.Hashes,
+  });
+
   const cacheStateRootTx =
     await stateOracle.write.cacheKeystoreStateRootWithProof([
       {
@@ -56,8 +61,8 @@ import { BlockTransactionsKind } from "@axiom-crypto/keystore-sdk";
       {
         stateRoot: block.stateRoot,
         withdrawalsRoot: block.withdrawalsRoot,
-        lastValidBlockhash: block.hash
-      }
+        lastValidBlockhash: block.hash,
+      },
     ]);
 
   await publicClientBaseSepolia.waitForTransactionReceipt({
@@ -68,14 +73,14 @@ import { BlockTransactionsKind } from "@axiom-crypto/keystore-sdk";
   console.log(
     `Keystore state root cached.\n\tNumber of L1 Blockhash: ${hyperlink(
       blockNumber.toString(),
-      `https://sepolia.etherscan.io/block/${blockNumber}`
+      `https://sepolia.etherscan.io/block/${blockNumber}`,
     )}\n\tL1 Blockhash: ${hyperlink(
       blockhash,
-      `https://sepolia.etherscan.io/block/${blockhash}`
+      `https://sepolia.etherscan.io/block/${blockhash}`,
     )}\n\tKeystore State Root Cache Tx Hash: ${hyperlink(
       cacheStateRootTx,
-      `https://sepolia.basescan.org/tx/${cacheStateRootTx}`
-    )}\n\tKeystore State Root: ${toHex(proof.storageProof[0].value)}`
+      `https://sepolia.basescan.org/tx/${cacheStateRootTx}`,
+    )}\n\tKeystore State Root: ${toHex(proof.storageProof[0].value)}`,
   );
 })();
 
