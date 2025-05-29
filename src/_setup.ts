@@ -35,12 +35,9 @@ dotenv.config();
 const setup = parse(readFileSync("src/_setup.toml", "utf-8"));
 
 // ERC-4337 constants
-//@ts-expect-error
-export const stateRootInvalidationTime = BigInt(
-  setup.stateRootInvalidationTime
-);
-export const cacheInvalidationTime = BigInt(setup.cacheInvalidationTime);
-export const keyDataConsumer = setup.keyDataConsumer;
+export const stateRootInvalidationTime = BigInt(setup.stateRootInvalidationTime as string | number);
+export const cacheInvalidationTime = BigInt(setup.cacheInvalidationTime as string | number);
+export const keyDataConsumer = setup.keyDataConsumer as `0x${string}`;
 
 const privKeyFunded = (process.env.BUNDLING_PRIVATE_KEY ??
   (() => {

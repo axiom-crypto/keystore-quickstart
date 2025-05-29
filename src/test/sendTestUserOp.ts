@@ -1,4 +1,4 @@
-import { concat, encodeAbiParameters, keccak256, pad, toHex } from "viem";
+import { concat, encodeAbiParameters, encodeFunctionData, keccak256, pad, toHex } from "viem";
 import {
   account1,
   data,
@@ -66,6 +66,12 @@ async function sendTestUserOp() {
     constructCalldata(),
   );
 
+    console.log('Raw calldata:', encodeFunctionData({
+    abi: entryPoint.abi,
+    functionName: 'handleOps',
+    args: [[packedUserOp], signer.address]
+  }));
+  
   const bundleTxHash = (await entryPoint.write.handleOps([
     [packedUserOp],
     signer.address,
@@ -198,58 +204,27 @@ async function constructKeystoreUserOpSignature(
     );
   }
 
+  console.log(keyData);
   const keyDataProof = encodeAbiParameters(
     [
-      {
-        type: "tuple",
-        name: "keyDataProof",
-        components: [
-          {
-            type: "bool",
-            name: "isExclusion",
-          },
-          {
-            type: "bytes",
-            name: "exclusionExtraData",
-          },
-          {
-            type: "bytes1",
-            name: "nextDummyByte",
-          },
-          {
-            type: "bytes32",
-            name: "nextImtKey",
-          },
-          {
-            type: "bytes32",
-            name: "vkeyHash",
-          },
-          {
-            type: "bytes",
-            name: "keyData",
-          },
-          {
-            type: "bytes32[]",
-            name: "proof",
-          },
-          {
-            type: "uint256",
-            name: "isLeft",
-          },
-        ],
-      },
+      { type: "bool", name: "isExclusion" },
+      { type: "bytes", name: "exclusionExtraData" },
+      { type: "bytes1", name: "nextDummyByte" },
+      { type: "bytes32", name: "nextImtKey" },
+      { type: "bytes32", name: "vkeyHash" },
+      { type: "bytes", name: "keyData" },
+      { type: "bytes32[]", name: "proof" },
+      { type: "uint256", name: "isLeft" },
     ],
     [
-      {
-        isExclusion: imtProof.proof.isExclusionProof,
-        exclusionExtraData,
-        nextDummyByte: imtProof.proof.leaf.nextKeyPrefix,
-        nextImtKey: imtProof.proof.leaf.nextKey,
-        vkeyHash,
-        keyData,
-        proof: imtProof.proof.siblings.map((sibling) => sibling.hash),
-        isLeft,
-      },
+      imtProof.proof.isExclusionProof,
+      exclusionExtraData,
+      imtProof.proof.leaf.nextKeyPrefix,
+      imtProof.proof.leaf.nextKey,
+      vkeyHash,
+      keyData,
+      imtProof.proof.siblings.map((sibling) => sibling.hash),
+      isLeft,
     ],
   );
 
