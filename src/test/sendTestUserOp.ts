@@ -3,11 +3,11 @@ import {
   account1,
   data,
   entryPoint,
-  keystoreValidatorModule,
   nodeProvider,
   nonceKey,
   publicClientBaseSepolia,
   signer,
+  stateOracle,
   vkeyHash,
 } from "../_setup";
 import { readFileSync } from "fs";
@@ -143,10 +143,9 @@ async function constructKeystoreUserOpSignature(
   salt: `0x${string}`,
   keystoreAddress: `0x${string}`
 ) {
-  // Get the latest state root that has been cached from the keystore validator
-  // module
+  // Get the latest state root that has been cached from the state oracle
   const latestCachedStateRoot: `0x${string}` =
-    (await keystoreValidatorModule.read.latestStateRoot()) as `0x${string}`;
+    (await stateOracle.read.latestStateRoot()) as `0x${string}`;
 
   // Get the block number of the latest cached state root
   const latestCachedBlockNumber = await nodeProvider.getBlockNumberByStateRoot({
