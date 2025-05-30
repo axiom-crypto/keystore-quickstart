@@ -1,4 +1,4 @@
-import { concat, encodeAbiParameters, encodeFunctionData, keccak256, pad, toHex } from "viem";
+import { concat, encodeAbiParameters, keccak256, pad, toHex } from "viem";
 import {
   account1,
   data,
@@ -66,12 +66,6 @@ async function sendTestUserOp() {
     constructCalldata(),
   );
 
-    console.log('Raw calldata:', encodeFunctionData({
-    abi: entryPoint.abi,
-    functionName: 'handleOps',
-    args: [[packedUserOp], signer.address]
-  }));
-  
   const bundleTxHash = (await entryPoint.write.handleOps([
     [packedUserOp],
     signer.address,
@@ -127,7 +121,9 @@ async function constructUserOp(
   ])) as `0x${string}`;
 
   // Since the threshold is 1, we can use the first signer's signature
-  const userOpSignature = await account1.sign({ hash: userOpHash });
+  const userOpSignature = await account1.signMessage({
+    message: { raw: userOpHash },
+  });
 
   // Construct the keystore userOp signature
   packedUserOp.signature = await constructKeystoreUserOpSignature(
@@ -204,7 +200,6 @@ async function constructKeystoreUserOpSignature(
     );
   }
 
-  console.log(keyData);
   const keyDataProof = encodeAbiParameters(
     [
       { type: "bool", name: "isExclusion" },
