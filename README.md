@@ -10,6 +10,8 @@ This repository houses a series of scripts to help you explore and understand th
   - [`02_update.ts`](#02_updatets)
     - [Re-Orgs](#re-orgs)
   - [`02a_sync.ts`](#02a_syncts)
+  - [`03_deposit.ts`](#03_depositts)
+  - [`04_withdraw.ts`](#04_withdrawts)
 
 ## Overview
 
@@ -25,6 +27,8 @@ Rather than depend on an external bundler, the scripts self-bundle the `userOp`s
 - `01_setup.ts`: Deploys a keystore-enabled smart account.
 - `02_update.ts`: Runs through the entire process of making an update on the keystore.
 - `02a_sync.ts`: An optional extension to the update script which syncs the new state to L2.
+- `03_deposit.ts`: Demonstrates how to deposit funds into a keystore account.
+- `04_withdraw.ts`: Shows how to withdraw funds from a keystore account.
 
 In the following sections, we will walk through the scripts in detail. At various points, we link to the official docs where you can deepen your understanding of the flow.
 
@@ -194,3 +198,35 @@ npx tsx src/02a_sync.ts
 ```
 
 This script will construct a storage proof of the keystore state root and execute it on the Keystore Validator.
+
+### `03_deposit.ts`
+
+This script demonstrates how to deposit ETH into your keystore account. It will:
+
+- Create a deposit transaction for 0.005 ETH
+- Send the transaction to L1
+- Wait for the deposit to be included in a keystore block (typically takes ~6 minutes)
+
+Run the script with:
+
+```bash
+npx tsx src/03_deposit.ts
+```
+
+### `04_withdraw.ts`
+
+This script shows how to withdraw ETH from your keystore account. It will:
+
+- Create a withdraw transaction for 0.003 ETH to your signer Ethereum address
+- Authenticate the transaction using the signature prover
+- Send the transaction to the keystore sequencer
+- Wait for the transaction to be finalized on L1
+- Finalize the withdrawal on L1 to get the funds back to the signer's Ethereum address
+
+Run the script with:
+
+```bash
+npx tsx src/04_withdraw.ts
+```
+
+The script will output the transaction hashes and status updates as it progresses. You can verify the withdrawal by checking the updated keystore account balance using the same command as above.

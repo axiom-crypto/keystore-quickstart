@@ -1,35 +1,30 @@
-import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { parse } from "@iarna/toml";
+import { mkdirSync, readFileSync, writeFileSync } from "fs";
 import {
-  dataHash,
   consumerCodehash,
-  nodeProvider,
+  dataHash,
+  keystoreBridge,
   privKey1,
   sequencerProvider,
   signatureProverProvider,
+  signer,
   signers,
-  threshold,
   vkey,
+  walletClientSepolia,
 } from "./_setup";
 import {
   AuthenticationStatusEnum,
   BlockTag,
-  createUpdateTransactionClient,
+  createWithdrawTransactionClient,
   initAccountCounterfactual,
   initAccountFromAddress,
+  publicActionsL1,
   TransactionStatus,
+  walletActionsL1,
   type AccountState,
 } from "@axiom-crypto/keystore-sdk";
-import { concat, decodeAbiParameters, encodeAbiParameters } from "viem";
-import { green, sleep, yellow } from "./utils";
-
-const AXIOM_SPONSOR_CODEHASH =
-  "0xa1b20564cd6cc6410266a716c9654406a15e822d4dc89c4127288da925d5c225";
-const AXIOM_SPONSOR_DATA_HASH =
-  "0xecf85bc51a8b47c545dad1a47e868276d0a92b7cf2716033ce77d385a6b67c4b";
-const AXIOM_SPONSOR_KEYSTORE_ADDR =
-  "0xb5ce21832ca3bbf53de610c6dda13d6a735b0a8ea3422aeaab678a01e298269d";
-const AXIOM_SPONSOR_EOA = "0xD7548a3ED8c51FA30D26ff2D7Db5C33d27fd48f2";
+import { decodeAbiParameters, parseEther, publicActions } from "viem";
+import { green, hyperlink, sleep, yellow } from "./utils";
 
 const RETRY_INTERVAL_SEC = 30;
 const MAX_RETRIES = 20;
@@ -39,12 +34,10 @@ const MAX_RETRIES = 20;
   const config = parse(tomlContent);
 
   const keystoreAddress = config.keystoreAddress as `0x${string}`;
-  const nonce = BigInt(
-    await nodeProvider.getTransactionCount({
-      address: keystoreAddress,
-      block: BlockTag.Latest,
-    }),
-  );
+  const nonce = await sequencerProvider.getTransactionCount({
+    address: keystoreAddress,
+    block: BlockTag.Latest,
+  });
 
   // Initialize KeystoreAccount object based on whether the account is counterfactual or not.
   let keystoreAccount;
@@ -57,7 +50,7 @@ const MAX_RETRIES = 20;
     });
     eoaAddrs = signers;
   } else {
-    const state: AccountState = await nodeProvider.getStateAt({
+    const state: AccountState = await sequencerProvider.getStateAt({
       address: keystoreAddress,
       block: BlockTag.Latest,
     });
@@ -84,79 +77,34 @@ const MAX_RETRIES = 20;
   // Fetch how much the sequencer is charging for `feePerGas`
   const feePerGas = await sequencerProvider.gasPrice();
 
-  const sponsorAcct = initAccountFromAddress({
-    address: AXIOM_SPONSOR_KEYSTORE_ADDR,
-    dataHash: AXIOM_SPONSOR_DATA_HASH,
-    vkey,
-    nodeClient: nodeProvider,
-  });
-
-  const newUserData = constructNewUserData();
-  const updateTx = await createUpdateTransactionClient({
-    newUserData,
-    newUserVkey: vkey,
+  // Create a withdraw transaction
+  const withdrawTx = await createWithdrawTransactionClient({
+    amt: parseEther("0.003"),
+    to: signer.address,
     userAcct: keystoreAccount,
-    sponsorAcct,
+    nonce,
     feePerGas,
   });
 
-  const userSig = await updateTx.sign(privKey1);
+  console.log("Withdraw Transaction:");
+  console.log(`\tkeystoreAccount: ${keystoreAccount}`);
+  console.log(`\tamount: 0.003 ETH`);
+  console.log(`\tto: ${signer.address}`);
 
-  const sponsoredAuthInputs = {
-    sponsorAuthInputs: signatureProverProvider.makeAuthInputs({
-      codehash: AXIOM_SPONSOR_CODEHASH,
-      signatures: [],
-      signersList: [AXIOM_SPONSOR_EOA],
-    }),
-    userAuthInputs: signatureProverProvider.makeAuthInputs({
-      codehash: consumerCodehash,
-      signatures: [userSig],
-      signersList: eoaAddrs,
-    }),
-  };
+  const txSignature = await withdrawTx.sign(privKey1);
 
-  const keyData = concat([
-    "0x00",
-    encodeAbiParameters(
-      [
-        { name: "codehash", type: "bytes32" },
-        { name: "threshold", type: "uint256" },
-        { name: "eoaAddrs", type: "address[]" },
-      ],
-      [consumerCodehash, threshold, eoaAddrs],
-    ),
-  ]);
-  const sponsorKeyData = concat([
-    "0x00",
-    encodeAbiParameters(
-      [
-        { name: "codehash", type: "bytes32" },
-        { name: "threshold", type: "uint256" },
-        { name: "eoaAddrs", type: "address[]" },
-      ],
-      [AXIOM_SPONSOR_CODEHASH, 0n, [AXIOM_SPONSOR_EOA]],
-    ),
-  ]);
+  // Create the user AuthInputs to be used in authenticating a withdraw transaction
+  console.log("Authenticating withdraw transaction...");
+  const userAuthInputs = signatureProverProvider.makeAuthInputs({
+    codehash: consumerCodehash,
+    signatures: [txSignature],
+    signersList: eoaAddrs,
+  });
 
-  console.log(sponsoredAuthInputs);
-
-  console.log(
-    `Sending request to generate ZK proof to signature prover RPC...\n\t${green(
-      "User Key Data (from keystore)",
-    )}: ${keyData}\n\t${green(
-      "User Auth Data (signatures)",
-    )}: [${userSig}]\n\t${green(
-      "Sponsor Key Data (from keystore)",
-    )}: ${sponsorKeyData}\n\t${green(
-      "Sponsor Auth Data (for private devnet, the sponsor account is chosen to require no authentication)",
-    )}: []`,
-  );
-
-  const requestHash =
-    await signatureProverProvider.authenticateSponsoredTransaction({
-      transaction: updateTx.toBytes(),
-      sponsoredAuthInputs,
-    });
+  const requestHash = await signatureProverProvider.authenticateTransaction({
+    transaction: withdrawTx.toBytes(),
+    authInputs: userAuthInputs,
+  });
 
   console.log(`${yellow("\tRequest hash: ")} ${requestHash}\n`);
   console.log(
@@ -167,7 +115,7 @@ const MAX_RETRIES = 20;
   try {
     mkdirSync("src/debug", { recursive: true });
     const txJson = JSON.stringify(
-      updateTx.toTypedData(),
+      withdrawTx.toTypedData(),
       (_, value) => (typeof value === "bigint" ? value.toString() : value),
       2,
     );
@@ -180,10 +128,9 @@ const MAX_RETRIES = 20;
   let i = 0;
   const authenticatedTx = await (async () => {
     while (true) {
-      const status =
-        await signatureProverProvider.getSponsoredAuthenticationStatus({
-          requestHash,
-        });
+      const status = await signatureProverProvider.getAuthenticationStatus({
+        requestHash,
+      });
       console.log(`\tTime elapsed: ${(i++ * RETRY_INTERVAL_SEC) / 60} minutes`);
       switch (status.status) {
         case AuthenticationStatusEnum.Pending:
@@ -195,7 +142,7 @@ const MAX_RETRIES = 20;
           if (!status.authenticatedTransaction) {
             throw new Error("No authenticated transaction found");
           }
-          console.log(`\t${green("Sponsor authentication completed!")}`);
+          console.log(`\t${green("Authentication completed!")}`);
           return status.authenticatedTransaction;
         default:
           throw new Error("Invalid authentication status");
@@ -217,7 +164,7 @@ const MAX_RETRIES = 20;
   let currentStatus = "";
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
-      const receipt = await nodeProvider.getTransactionReceipt({
+      const receipt = await sequencerProvider.getTransactionReceipt({
         hash: txHash,
       });
 
@@ -242,10 +189,8 @@ const MAX_RETRIES = 20;
           case TransactionStatus.L2FinalizedL1Included:
             console.log(
               `\t${green(
-                `Success: keystore block ${receipt?.blockNumber!} containing update transaction was finalized on L1!`,
-              )}\n\nCheck the previous state of the keystore account using:\n\tcast rpc keystore_getStateAt ${keystoreAddress} ${
-                receipt?.blockNumber! - 1n
-              } --rpc-url https://keystore-rpc-node.axiom.xyz | jq\n\nVerify the transaction updated the keystore account state using:\n\tcast rpc keystore_getStateAt ${keystoreAddress} "latest" --rpc-url https://keystore-rpc-node.axiom.xyz | jq`,
+                `Success: keystore block ${receipt?.blockNumber!} containing withdraw transaction was finalized on L1!`,
+              )}\n\nCheck the updated account balance:\n\tcast rpc keystore_getBalance ${keystoreAddress} "latest" --rpc-url https://keystore-rpc-node.axiom.xyz | jq`,
             );
             return;
         }
@@ -260,20 +205,23 @@ const MAX_RETRIES = 20;
 
     await sleep(RETRY_INTERVAL_SEC * 1000);
   }
-})();
 
-/**
- * For the new user data, we will add one new public key to the list of authorized keys.
- */
-function constructNewUserData() {
-  const newAuthorizedAddress: `0x${string}` =
-    "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC";
+  const l1Client = walletClientSepolia
+    .extend(publicActions)
+    .extend(publicActionsL1())
+    .extend(walletActionsL1());
 
-  const newSignersList = [...signers, newAuthorizedAddress];
-
-  return signatureProverProvider.keyDataEncoder({
-    codehash: consumerCodehash,
-    m: threshold,
-    signersList: newSignersList,
+  const finalizationArgs = await sequencerProvider.buildFinalizeWithdrawalArgs({
+    transactionHash: withdrawTx.txHash(),
   });
-}
+  const finalizeWithdrawalL1TxHash = await l1Client.finalizeWithdrawal({
+    bridgeAddress: keystoreBridge,
+    ...finalizationArgs,
+  });
+  console.log(
+    `\tFinalized withdrawal on L1. L1 transaction hash: ${hyperlink(
+      finalizeWithdrawalL1TxHash,
+      `https://sepolia.etherscan.io/tx/${finalizeWithdrawalL1TxHash}`,
+    )}`,
+  );
+})();
