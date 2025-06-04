@@ -1,16 +1,18 @@
 import {
   keystoreBridge,
-  keystoreValidatorModule,
   latestStateRootSlot,
+  nodeProvider,
   publicClientBaseSepolia,
   publicClientSepolia,
+  stateOracle,
 } from "./_setup";
 import { abi as L1BlockAbi } from "../abis/L1Block.json";
 import { keccak256, pad, toHex, toRlp } from "viem";
 import { hyperlink } from "./utils";
+import { BlockTransactionsKind } from "@axiom-crypto/keystore-sdk";
 
 (async () => {
-  const cacheTxHash = await keystoreValidatorModule.write.cacheBlockhash();
+  const cacheTxHash = await stateOracle.write.cacheBlockhash();
   const receipt = await publicClientBaseSepolia.waitForTransactionReceipt({
     confirmations: 1,
     hash: cacheTxHash,
@@ -38,13 +40,28 @@ import { hyperlink } from "./utils";
 
   const blockhash = keccak256(rlpBlockHeader);
 
+  let outputRoot = pad(`0x${proof.storageProof[0].value.toString(16)}`);
+  // Get output root preimage
+  let outputRootBlockNumber = await nodeProvider.getBlockNumberByOutputRoot({
+    outputRoot: outputRoot,
+  });
+  let block = await nodeProvider.getBlockByNumber({
+    block: outputRootBlockNumber,
+    txKind: BlockTransactionsKind.Hashes,
+  });
+
   const cacheStateRootTx =
-    await keystoreValidatorModule.write.cacheKeystoreStateRoot([
+    await stateOracle.write.cacheKeystoreStateRootWithProof([
       {
-        storageValue: pad(`0x${proof.storageProof[0].value.toString(16)}`),
+        storageValue: outputRoot,
         blockHeader: rlpBlockHeader,
         accountProof: proof.accountProof,
         storageProof: proof.storageProof[0].proof,
+      },
+      {
+        stateRoot: block.stateRoot,
+        withdrawalsRoot: block.withdrawalsRoot,
+        lastValidBlockhash: block.hash,
       },
     ]);
 
@@ -56,14 +73,14 @@ import { hyperlink } from "./utils";
   console.log(
     `Keystore state root cached.\n\tNumber of L1 Blockhash: ${hyperlink(
       blockNumber.toString(),
-      `https://sepolia.etherscan.io/block/${blockNumber}`
+      `https://sepolia.etherscan.io/block/${blockNumber}`,
     )}\n\tL1 Blockhash: ${hyperlink(
       blockhash,
-      `https://sepolia.etherscan.io/block/${blockhash}`
+      `https://sepolia.etherscan.io/block/${blockhash}`,
     )}\n\tKeystore State Root Cache Tx Hash: ${hyperlink(
       cacheStateRootTx,
-      `https://sepolia.basescan.org/tx/${cacheStateRootTx}`
-    )}\n\tKeystore State Root: ${toHex(proof.storageProof[0].value)}`
+      `https://sepolia.basescan.org/tx/${cacheStateRootTx}`,
+    )}\n\tKeystore State Root: ${toHex(proof.storageProof[0].value)}`,
   );
 })();
 
