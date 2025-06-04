@@ -15,7 +15,7 @@ import {
   account1,
   dataHash,
   entryPoint,
-  invalidationTime,
+  cacheInvalidationTime,
   k1Validator,
   keystoreValidatorModule,
   publicClientBaseSepolia,
@@ -24,6 +24,7 @@ import {
   threshold,
   vkeyHash,
   walletClientBaseSepolia,
+  stateRootInvalidationTime,
 } from "./_setup.ts";
 import { stringify } from "@iarna/toml";
 import { writeFileSync } from "fs";
@@ -40,8 +41,8 @@ import { hyperlink, yellow } from "./utils.ts";
 
   console.log(
     `Counterfactually initializing keystore account...\n\t${yellow(
-      `${threshold}-of-${signers.length} Multisig`
-    )}\n\tSigners List: ${signers}\n\n\tSalt: ${salt}\n\tData Hash: ${dataHash}\n\tVkey Hash: ${vkeyHash}\n\tKeystore Address: ${keystoreAddress}`
+      `${threshold}-of-${signers.length} Multisig`,
+    )}\n\tSigners List: ${signers}\n\n\tSalt: ${salt}\n\tData Hash: ${dataHash}\n\tVkey Hash: ${vkeyHash}\n\tKeystore Address: ${keystoreAddress}`,
   );
   console.log();
 
@@ -49,8 +50,9 @@ import { hyperlink, yellow } from "./utils.ts";
 
   await installKeystoreValidator(
     nexusDeployment,
-    invalidationTime,
-    keystoreAddress
+    stateRootInvalidationTime,
+    cacheInvalidationTime,
+    keystoreAddress,
   );
 
   const smartAccountTomlData = {
@@ -63,7 +65,7 @@ import { hyperlink, yellow } from "./utils.ts";
   writeFileSync("src/_accountL2.toml", stringify(smartAccountTomlData));
   writeFileSync(
     "src/_accountKeystore.toml",
-    stringify(keystoreAccountTomlData)
+    stringify(keystoreAccountTomlData),
   );
 })();
 
@@ -92,18 +94,18 @@ async function deployNexusInstance() {
   const log = receipt.logs.find(
     (log) =>
       log.topics[0] ===
-      "0x33310a89c32d8cc00057ad6ef6274d2f8fe22389a992cf89983e09fc84f6cfff"
+      "0x33310a89c32d8cc00057ad6ef6274d2f8fe22389a992cf89983e09fc84f6cfff",
   );
   const nexusDeployment = slice(log?.topics[1]!, 12);
 
   console.log(
     `Nexus instance deployed at ${hyperlink(
       nexusDeployment,
-      `https://sepolia.basescan.org/address/${nexusDeployment}`
+      `https://sepolia.basescan.org/address/${nexusDeployment}`,
     )}.\n\tTx Hash: ${hyperlink(
       receipt.transactionHash,
-      `https://sepolia.basescan.org/tx/${receipt.transactionHash}`
-    )}`
+      `https://sepolia.basescan.org/tx/${receipt.transactionHash}`,
+    )}`,
   );
 
   const sendTxHash = await walletClientBaseSepolia.sendTransaction({
@@ -116,8 +118,8 @@ async function deployNexusInstance() {
   console.log(
     `Sent ether to smart account (for userOp execution).\n\tTx Hash: ${hyperlink(
       sendReceipt.transactionHash,
-      `https://sepolia.basescan.org/tx/${sendReceipt.transactionHash}`
-    )}`
+      `https://sepolia.basescan.org/tx/${sendReceipt.transactionHash}`,
+    )}`,
   );
 
   return nexusDeployment;
@@ -125,12 +127,17 @@ async function deployNexusInstance() {
 
 async function installKeystoreValidator(
   nexusDeployment: `0x${string}`,
-  _invalidationTime: bigint,
-  _keystoreAddress: `0x${string}`
+  _stateRootInvalidationTime: bigint,
+  _cacheInvalidationTime: bigint,
+  _keystoreAddress: `0x${string}`,
 ) {
   const validatorData = encodeAbiParameters(
-    [{ type: "uint256" }, { type: "bytes32" }],
-    [_invalidationTime, _keystoreAddress]
+    [{ type: "uint32" }, { type: "uint32" }, { type: "bytes32" }],
+    [
+      Number(stateRootInvalidationTime),
+      Number(_cacheInvalidationTime),
+      _keystoreAddress,
+    ],
   );
   const validatorInstallationCalldata = encodeFunctionData({
     abi: nexusAbi,
@@ -176,7 +183,7 @@ async function installKeystoreValidator(
   console.log(
     `Keystore validator installed.\n\tTx Hash: ${hyperlink(
       bundleTxHash,
-      `https://sepolia.basescan.org/tx/${bundleTxHash}`
-    )}`
+      `https://sepolia.basescan.org/tx/${bundleTxHash}`,
+    )}`,
   );
 }

@@ -27,7 +27,8 @@ import { parse } from "@iarna/toml";
 import dotenv from "dotenv";
 
 import { abi as EntryPointAbi } from "../abis/EntryPoint.json";
-import { abi as KeystoreValidatorModuleAbi } from "../abis/KeystoreValidatorModule.json";
+import { abi as KeystoreValidatorModuleAbi } from "../abis/KeystoreValidator.json";
+import { abi as StateOracleAbi } from "../abis/OPStackStateOracle.json";
 
 dotenv.config();
 
@@ -35,7 +36,11 @@ const setup = parse(readFileSync("src/_setup.toml", "utf-8"));
 
 // ERC-4337 constants
 //@ts-expect-error
-export const invalidationTime = BigInt(setup.invalidationTime);
+export const stateRootInvalidationTime = BigInt(
+  setup.stateRootInvalidationTime
+);
+export const cacheInvalidationTime = BigInt(setup.cacheInvalidationTime);
+export const keyDataConsumer = setup.keyDataConsumer;
 
 const privKeyFunded = (process.env.BUNDLING_PRIVATE_KEY ??
   (() => {
@@ -72,6 +77,11 @@ const keystoreValidatorAddress =
   process.env.KEYSTORE_VALIDATOR_L2_ADDRESS ??
   (() => {
     throw new Error("KEYSTORE_VALIDATOR_L2_ADDRESS is undefined");
+  })();
+const keystoreStateOracleAddress =
+  process.env.KEYSTORE_STATE_ORACLE_L2_ADDRESS ??
+  (() => {
+    throw new Error("KEYSTORE_STATE_ORACLE_L2_ADDRESS is undefined");
   })();
 const keystoreBridgeAddress =
   process.env.KEYSTORE_BRIDGE_ADDRESS ??
@@ -147,6 +157,12 @@ export const entryPoint = getContract({
 export const keystoreValidatorModule = getContract({
   address: keystoreValidatorAddress as `0x${string}`,
   abi: KeystoreValidatorModuleAbi,
+  client: { public: publicClientBaseSepolia, wallet: walletClientBaseSepolia },
+});
+
+export const stateOracle = getContract({
+  address: keystoreStateOracleAddress as `0x{string}`,
+  abi: StateOracleAbi,
   client: { public: publicClientBaseSepolia, wallet: walletClientBaseSepolia },
 });
 
