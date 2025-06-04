@@ -132,8 +132,10 @@ export const MOfNSignatureProver: CustomSignatureProver<
   makeAuthInputs,
 };
 
-export const signatureProverProvider =
-  createSignatureProverClient({ url: M_OF_N_ECDSA_SIG_PROVER_URL, ...MOfNSignatureProver });
+export const signatureProverProvider = createSignatureProverClient({
+  url: keystoreSignatureProverRpc,
+  ...MOfNSignatureProver,
+});
 
 // For self-bundling
 export const entryPoint = getContract({
@@ -154,7 +156,7 @@ export const consumerCodehash = setup.consumerCodehash as `0x${string}`;
 export const threshold = BigInt(setup.threshold);
 //@ts-expect-error
 export const signers = setup.signerPrivKeys.map((privKey: `0x${string}`) =>
-  privateKeyToAddress(privKey)
+  privateKeyToAddress(privKey),
 );
 export const data = signatureProverProvider.keyDataEncoder({
   codehash: consumerCodehash,
