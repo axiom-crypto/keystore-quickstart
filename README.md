@@ -146,7 +146,7 @@ This script will run through the entire process of making an update on the keyst
   - On testnet, sponsorship is completely free meaning that anyone can authenticate.
   - This step may take a couple minutes to complete.
 - Send the transaction to the sequencer and await finalization.
-  - On testnet, finalization takes place every 5 minutes (on mainnet, this will be closer to once every hour).
+  - On testnet, finalization takes place every ~10 minutes (on mainnet, this will be closer to once every hour).
 
 Run the script with
 
